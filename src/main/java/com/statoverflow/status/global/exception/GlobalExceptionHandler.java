@@ -1,7 +1,7 @@
 package com.statoverflow.status.global.exception;
 
-import com.statoverflow.global.error.ErrorType;
-import com.statoverflow.global.response.ApiResponse;
+import com.statoverflow.status.global.error.ErrorType;
+import com.statoverflow.status.global.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

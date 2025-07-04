@@ -1,6 +1,6 @@
 package com.statoverflow.status.global.exception;
 
-import com.statoverflow.global.error.ErrorType;
+import com.statoverflow.status.global.error.ErrorType;
 import lombok.Getter;
 
 @Getter

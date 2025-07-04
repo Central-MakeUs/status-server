@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import com.statoverflow.global.error.ErrorType;
+import com.statoverflow.status.global.error.ErrorType;
 
 @Getter
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
