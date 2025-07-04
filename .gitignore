@@ -7,6 +7,7 @@ build/
 
 *.env
 *.json
+*.yml
 
 ### STS ###
 .apt_generated
