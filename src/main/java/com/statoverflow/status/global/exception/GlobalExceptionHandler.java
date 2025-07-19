@@ -2,6 +2,8 @@ package com.statoverflow.status.global.exception;
 
 import com.statoverflow.status.global.error.ErrorType;
 import com.statoverflow.status.global.response.ApiResponse;
+
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,7 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
-//@Hidden
+@Hidden
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
