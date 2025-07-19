@@ -7,23 +7,26 @@ import com.statoverflow.status.global.response.ApiResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Slf4j
 @RestController
-@RequestMapping("/api/oauth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class OAuthController {
 
     private final OAuthService oAuthService;
 
-    @PostMapping("/login")
+    @PostMapping("/kakao-login")
     public ResponseEntity<ApiResponse<TokenResponseDto>> oauthLogin(@RequestBody OAuthLoginRequestDto request,
                                                                    HttpServletResponse response) {
-
+        log.info("카카오 로그인 요청 수신, 코드: {}", request.accessCode());
         // 소셜 API 로 유저 정보 인증
         TokenResponseDto tokens = oAuthService.login(request);
 

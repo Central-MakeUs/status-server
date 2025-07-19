@@ -6,5 +6,5 @@ import org.springframework.stereotype.Service;
 
 @Service
 public interface OAuthService {
-    TokenResponseDto login(OAuthLoginRequestDto request);
+    TokenResponseDto kakaoLogin(OAuthLoginRequestDto request);
 }
