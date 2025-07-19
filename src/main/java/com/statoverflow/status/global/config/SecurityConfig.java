@@ -34,9 +34,7 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager,
-		JwtFilter jwtFilter,
-		AuthService authService, OauthService oauthService) throws
+	public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws
 		Exception {
 
 		//http basic 인증 방식 disable
@@ -56,42 +54,6 @@ public class SecurityConfig {
 					)
 					.permitAll()
 					.anyRequest().authenticated()
-			)
-			.oauth2Login(oauth2 -> oauth2
-				.authorizationEndpoint(authorization -> authorization
-					.baseUri("/oauth2/authorize/**")
-				)
-				.redirectionEndpoint(redirection -> redirection
-					.baseUri("/oauth2/login/code/*"))
-				.userInfoEndpoint((userInfoEndpointConfig) -> userInfoEndpointConfig
-					.userService(oauthService))
-				.successHandler(loginSuccessHandler)
-				.failureHandler(loginFailureHandler)
-			)
-
-			// OAuth 로그인 설정
-			.oauth2Login(customConfigurer -> customConfigurer
-				.successHandler(successHandler)
-				.failureHandler(failureHandler)
-				.userInfoEndpoint(endpointConfig -> endpointConfig.userService(customOAuthService))
-			);
-
-			.addFilter(new LoginFilter(authenticationManager, jwtUtil, tokenService))
-			// JwtFilter 등록
-			.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-			// 세션 설정
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.exceptionHandling(exceptionHandling ->
-				exceptionHandling
-					.accessDeniedHandler(accessDeniedHandler)
-					.authenticationEntryPoint(authenticationEntryPoint))
-			// 로그아웃
-			.logout(logout -> logout
-				.logoutUrl("/api/v1/auth/logout")  // 프론트에서 POST 요청할 경로
-				.addLogoutHandler(customLogoutHandler)
-				.logoutSuccessHandler((request, response, authentication) -> {
-					response.setStatus(HttpServletResponse.SC_OK);
-				})
 			);
 
 		return http.build();
