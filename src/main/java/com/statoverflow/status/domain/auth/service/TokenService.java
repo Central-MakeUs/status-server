@@ -13,7 +13,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class TokenService {
@@ -24,11 +26,17 @@ public class TokenService {
 		String accessToken = jwtService.generateAccessToken(user);
 		String refreshToken = jwtService.generateRefreshToken(user);
 
+		log.info("accessToken : {}", accessToken);
+		log.info("refreshToken : {}", refreshToken);
+
 		ResponseCookie accessTokenCookie = setTokenCookie("access_token", accessToken,
 			jwtService.getAccessTokenValidityInSeconds());
 
 		ResponseCookie refreshTokenCookie = setTokenCookie("refresh_token", refreshToken,
 			jwtService.getRefreshTokenValidityInSeconds());
+
+		log.info("accessTokenCookie : {}", accessTokenCookie);
+		log.info("refreshTokenCookie : {}", refreshTokenCookie);
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
 		response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());

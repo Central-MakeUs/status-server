@@ -111,7 +111,7 @@ public class KakaoOAuthClient {
 				responseType
 			);
 
-			log.info("카카오 유저 provider_id 값 수신 완료.");
+			log.info("카카오 유저 provider_id 값 수신 완료, provider_id: {}", response.getBody().getId());
 			return response.getBody().getId();
 
 		} catch (Exception e) {

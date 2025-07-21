@@ -40,8 +40,7 @@ public class SecurityConfig {
 					.requestMatchers(
 						"/api/v1/auth/**",
 						"/api/v1/health",
-						"/oauth2/**",
-						"/**"
+						"/oauth2/**"
 					)
 					.permitAll()
 					.anyRequest().authenticated()

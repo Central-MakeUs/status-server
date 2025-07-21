@@ -10,6 +10,8 @@ import com.statoverflow.status.domain.users.enums.ProviderType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -39,13 +41,11 @@ public class Users {
 	private String uuid;
 
 	@Column(nullable = false)
-	private String email;
-
-	@Column(nullable = false)
 	// @Min(2) @Max(10)
 	private String nickname;
 
 	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	private ProviderType providerType;
 
 	@Column(nullable = false)

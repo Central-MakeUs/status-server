@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 				SecurityContextHolder.getContext().setAuthentication(authentication);
 				log.debug("Security Context에 '{}' 인증 정보를 저장했습니다, URI: {}",
-					userDto.nickname(), request.getRequestURI());
+					userDto.id(), request.getRequestURI());
 
 			} catch (Exception e) {
 				log.error("JWT 인증 처리 중 오류 발생: {}", e.getMessage(), e);

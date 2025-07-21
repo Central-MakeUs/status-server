@@ -19,7 +19,8 @@ public class CorsConfig implements WebMvcConfigurer {
 		CorsConfiguration configuration = new CorsConfiguration();
 
 		configuration.setAllowedOrigins(
-			List.of("http://localhost:5173"));
+			List.of("http://localhost:5500",
+				"http://192.168.45.39:5500"));
 		// 허용 메서드 지정
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		// 클라이언트 요청 허용 헤더
@@ -28,8 +29,6 @@ public class CorsConfig implements WebMvcConfigurer {
 		configuration.setMaxAge(3600L);
 		// 인증이 필요한 요청 허용
 		configuration.setAllowCredentials(true);
-		// 클라이언트 접근 가능 헤더
-		configuration.setExposedHeaders(List.of("Authorization"));
 
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
@@ -39,7 +38,7 @@ public class CorsConfig implements WebMvcConfigurer {
 	@Override
 	public void addCorsMappings(CorsRegistry registry) {
 		registry.addMapping("/**")
-			.allowedOrigins("http://localhost:5173")
+			.allowedOrigins("http://localhost:5173","http://localhost:5500")
 			.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
 			.allowedHeaders("*")
 			.allowCredentials(true)

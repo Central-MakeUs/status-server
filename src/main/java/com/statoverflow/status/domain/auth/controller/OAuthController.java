@@ -7,12 +7,14 @@ import com.statoverflow.status.domain.auth.service.TokenService;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.domain.users.enums.ProviderType;
 import com.statoverflow.status.domain.users.service.UsersService;
+import com.statoverflow.status.global.annotation.CurrentUser;
 import com.statoverflow.status.global.response.ApiResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,4 +48,5 @@ public class OAuthController {
         return ApiResponse.ok(user);
 
     }
+
 }

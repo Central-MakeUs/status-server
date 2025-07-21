@@ -53,7 +53,8 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
         Date validity = new Date(now.getTime() + accessTokenExpirationMs);
 
         return Jwts.builder()
-            .claim("user", user)
+            .claim("id", user.id())
+            .claim("nickname", user.nickname())
             .issuedAt(now)
             .expiration(validity)
             .signWith(secretKey)
@@ -67,7 +68,8 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
         Date validity = new Date(now.getTime() + refreshTokenExpirationMs);
 
         return Jwts.builder()
-            .claim("user", user)
+            .claim("id", user.id())
+            .claim("nickname", user.nickname())
             .issuedAt(now)
             .expiration(validity)
             .signWith(secretKey)
@@ -92,12 +94,17 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
     }
 
     public BasicUsersDto parseUsersFromToken(String token) {
-        return Jwts.parser()
-            .verifyWith(secretKey)
+
+        Claims claims = Jwts.parser()
+            .verifyWith(secretKey) // 또는 setSigningKey()
             .build()
             .parseSignedClaims(token)
-            .getPayload()
-            .get("user", BasicUsersDto.class);
+            .getPayload();
+
+        int id = claims.get("id", Integer.class);
+        String nickname = claims.get("nickname", String.class);
+
+        return new BasicUsersDto((long) id, nickname);
 
     }
 
