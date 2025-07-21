@@ -4,6 +4,6 @@ import lombok.Getter;
 
 public record OAuthLoginRequestDto(
         String provider,
-        String accessCode
+        String code
 ) {
 }

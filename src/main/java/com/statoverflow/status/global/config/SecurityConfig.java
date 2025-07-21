@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.statoverflow.status.global.jwt.JwtAuthenticationFilter;
-import com.statoverflow.status.global.jwt.JwtTokenProvider;
+import com.statoverflow.status.global.jwt.JwtService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,17 +22,10 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	private final CorsConfig corsConfig;
-	private final JwtTokenProvider jwtTokenProvider;
-
-	//AuthenticationManager Bean 등록
-	@Bean
-	public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-		return configuration.getAuthenticationManager();
-	}
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
 	@Bean
-	public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationManager authenticationManager) throws
-		Exception {
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 		//http basic 인증 방식 disable
 		http
@@ -53,16 +46,7 @@ public class SecurityConfig {
 					.permitAll()
 					.anyRequest().authenticated()
 			)          // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 이전에 추가
-			.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class)
-
-			// 로그아웃 설정
-			// .logout(logout -> logout
-			// 	.logoutUrl("/api/v1/auth/logout") // 로그아웃 처리할 URL
-			// 	.addLogoutHandler(logoutService) // 로그아웃 핸들러 추가 (Redis에서 Refresh Token 삭제 등)
-			// 	.logoutSuccessHandler(logoutSuccessHandler) // 로그아웃 성공 시 처리 (HTTP 상태 코드, 메시지 등)
-			// 	.deleteCookies("access_token", "refresh_token_id") // 로그아웃 시 쿠키 삭제
-			// )
-		;
+			.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
 		return http.build();
 	}

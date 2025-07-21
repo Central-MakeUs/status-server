@@ -1,8 +1,12 @@
 package com.statoverflow.status.domain.auth.controller;
 
 import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
-import com.statoverflow.status.domain.auth.dto.TokenResponseDto;
+import com.statoverflow.status.domain.auth.dto.KakaoTokenResponseDto;
 import com.statoverflow.status.domain.auth.service.OAuthService;
+import com.statoverflow.status.domain.auth.service.TokenService;
+import com.statoverflow.status.domain.users.dto.BasicUsersDto;
+import com.statoverflow.status.domain.users.enums.ProviderType;
+import com.statoverflow.status.domain.users.service.UsersService;
 import com.statoverflow.status.global.response.ApiResponse;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,25 +26,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class OAuthController {
 
     private final OAuthService oAuthService;
+    private final UsersService usersService;
+    private final TokenService tokenService;
 
     @PostMapping("/kakao-login")
-    public ResponseEntity<ApiResponse<TokenResponseDto>> oauthLogin(@RequestBody OAuthLoginRequestDto request,
+    public ResponseEntity<ApiResponse<BasicUsersDto>> oauthLogin(@RequestBody OAuthLoginRequestDto request,
                                                                    HttpServletResponse response) {
-        log.info("카카오 로그인 요청 수신, 코드: {}", request.accessCode());
-        // 소셜 API 로 유저 정보 인증
-        TokenResponseDto tokens = oAuthService.login(request);
+        log.info("카카오 로그인 요청 수신, 코드: {}", request.code());
 
-        // todo: AccessToken 을 Redis에 저장
+        // 카카오 토큰 발급 후 식별자 코드 발급
+        String providerId = oAuthService.getProviderId(request.code());
 
+        // 식별자 코드로 user 정보 받기(없다면 회원가입 처리)
+        BasicUsersDto user = usersService.getUsersByProvider(ProviderType.KAKAO.name(), providerId);
 
-        // todo: RefreshToken을 HttpOnly 쿠키에 저장 - 메서드 분리
-        Cookie refreshCookie = new Cookie("refreshToken", tokens.refreshToken());
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(7 * 24 * 60 * 60);
-        response.addCookie(refreshCookie);
+        // todo: AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
+        tokenService.issueAndSetTokens(user, response);
 
-        return ApiResponse.ok(tokens);
+        return ApiResponse.ok(user);
 
     }
 }
