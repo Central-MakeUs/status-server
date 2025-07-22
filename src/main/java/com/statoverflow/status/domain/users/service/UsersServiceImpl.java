@@ -44,6 +44,8 @@ public class UsersServiceImpl implements UsersService{
 		log.info("회원가입 시작");
 		Users user = req.toEntity();
 
+		// todo: users_attribute_progress 내 정보 추가
+
 		return BasicUsersDto.from(usersRepository.save(user));
 	}
 }
