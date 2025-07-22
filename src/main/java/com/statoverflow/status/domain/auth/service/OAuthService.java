@@ -2,7 +2,10 @@ package com.statoverflow.status.domain.auth.service;
 
 import org.springframework.stereotype.Service;
 
+import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
+import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
+
 public interface OAuthService {
 
-    String getProviderId(String code);
+    OAuthProviderDto getProviderId(OAuthLoginRequestDto dto);
 }
