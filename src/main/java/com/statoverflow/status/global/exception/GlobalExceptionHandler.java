@@ -1,5 +1,6 @@
 package com.statoverflow.status.global.exception;
 
+import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.global.error.ErrorType;
 import com.statoverflow.status.global.response.ApiResponse;
 
@@ -16,10 +17,19 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(CustomException.class)
-    public ResponseEntity<ApiResponse<Void>> handleException(CustomException ex) {
-        log.error("Exception: {}", ex.getMessage(), ex);
-        return ApiResponse.error(ex.getErrorType());
+    public ResponseEntity<ApiResponse<Object>> handleCustomException(CustomException ex) {
+        log.error("CustomException: {}", ex.getMessage(), ex);
+
+        Object data = ex.getData();
+
+        // 데이터가 있으면 데이터와 함께 응답, 없으면 일반 에러 응답
+        if (data != null) {
+            return ApiResponse.errorWithData(ex.getErrorType(), data);
+        } else {
+            return ApiResponse.errorWithObject(ex.getErrorType());
+        }
     }
+
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(NoResourceFoundException ex) {

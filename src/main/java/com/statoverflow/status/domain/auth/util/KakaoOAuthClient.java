@@ -24,7 +24,6 @@ import org.springframework.util.MultiValueMap; // MultiValueMap 임포트
 import org.springframework.web.client.HttpClientErrorException; // HttpClientErrorException 임포트
 import org.springframework.web.client.RestTemplate; // RestTemplate 임포트
 
-import static com.statoverflow.status.domain.auth.dto.OAuthUserInfoDto.ProviderType.KAKAO;
 
 @Slf4j
 @Component
@@ -42,7 +41,7 @@ public class KakaoOAuthClient {
 	@Value("${spring.security.oauth2.client.provider.kakao.token-uri}")
 	private String kakaoTokenUri;
 
-	@Value("${spring.security.oauth2.client.provider.kakao.userinfo-uri}")
+	@Value("${spring.security.oauth2.client.provider.kakao.user-info-uri}")
 	private String kakaoUserInfoUri;
 
 	/**

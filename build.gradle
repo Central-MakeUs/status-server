@@ -27,6 +27,7 @@ ext {
 	jwtVersion = '0.12.6'
 	securityVersion = '3.3.0'
 	securityTestVersion = '6.3.0'
+	googleOAuth2Version = '2.7.2'
 }
 
 dependencies {
@@ -52,6 +53,11 @@ dependencies {
 	implementation "io.jsonwebtoken:jjwt-api:${jwtVersion}"
 	implementation "io.jsonwebtoken:jjwt-impl:${jwtVersion}"
 	implementation "io.jsonwebtoken:jjwt-jackson:${jwtVersion}"
+
+	// Google OAuth2
+//	implementation("com.google.api-client:google-api-client:${googleOAuth2Version}")// https://mvnrepository.com/artifact/com.google.auth/google-auth-library-oauth2-http
+	implementation("com.google.auth:google-auth-library-oauth2-http:1.37.1")
+
 
 }
 

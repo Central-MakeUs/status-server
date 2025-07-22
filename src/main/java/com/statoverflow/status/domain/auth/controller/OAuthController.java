@@ -2,6 +2,8 @@ package com.statoverflow.status.domain.auth.controller;
 
 import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
 import com.statoverflow.status.domain.auth.dto.KakaoTokenResponseDto;
+import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
+import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.service.OAuthService;
 import com.statoverflow.status.domain.auth.service.TokenService;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
@@ -32,21 +34,50 @@ public class OAuthController {
     private final TokenService tokenService;
 
     @PostMapping("/kakao-login")
-    public ResponseEntity<ApiResponse<BasicUsersDto>> oauthLogin(@RequestBody OAuthLoginRequestDto request,
-                                                                   HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<BasicUsersDto>> kakaoOauthLogin(@RequestBody OAuthLoginRequestDto request,
+        HttpServletResponse response) {
         log.info("카카오 로그인 요청 수신, 코드: {}", request.code());
 
+        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.KAKAO, request.code());
+
         // 카카오 토큰 발급 후 식별자 코드 발급
-        String providerId = oAuthService.getProviderId(request.code());
+        OAuthProviderDto provider = oAuthService.getProviderId(req);
 
         // 식별자 코드로 user 정보 받기(없다면 회원가입 처리)
-        BasicUsersDto user = usersService.getUsersByProvider(ProviderType.KAKAO.name(), providerId);
+        BasicUsersDto user = usersService.getUsersByProvider(provider);
 
-        // todo: AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
+        // AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
         tokenService.issueAndSetTokens(user, response);
 
         return ApiResponse.ok(user);
 
+    }
+
+    @PostMapping("/google-login")
+    public ResponseEntity<ApiResponse<BasicUsersDto>> googleOauthLogin(@RequestBody OAuthLoginRequestDto request,
+        HttpServletResponse response) {
+        log.info("구글 로그인 요청 수신, 코드: {}", request.code());
+
+        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.GOOGLE, request.code());
+
+        // 구글 토큰 발급 후 식별자 코드 발급
+        OAuthProviderDto provider = oAuthService.getProviderId(req);
+
+        // 식별자 코드로 user 정보 받기(없다면 회원가입 처리)
+        BasicUsersDto user = usersService.getUsersByProvider(provider);
+
+        // AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
+        tokenService.issueAndSetTokens(user, response);
+
+        return ApiResponse.ok(user);
+
+    }
+
+    @PostMapping("/sign-up")
+    public ResponseEntity<ApiResponse<BasicUsersDto>> signUp(@RequestBody SignUpRequestDto req, HttpServletResponse response) {
+        BasicUsersDto user = usersService.signUp(req);
+        tokenService.issueAndSetTokens(user, response);
+        return ApiResponse.ok(user);
     }
 
 }
