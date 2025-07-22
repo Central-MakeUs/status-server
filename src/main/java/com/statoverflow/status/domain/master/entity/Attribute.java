@@ -1,6 +1,6 @@
-package com.statoverflow.status.domain.attribute.entity;
+package com.statoverflow.status.domain.master.entity;
 
-import com.statoverflow.status.domain.attribute.enums.AttributeType;
+import com.statoverflow.status.domain.master.enums.AttributeType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,10 +19,10 @@ import lombok.NoArgsConstructor;
 public class Attribute {
 
 	@Id
-	private Integer bitMask;
-
-	@Column(nullable = false, unique = true)
 	private Integer attributeId;
+
+	@Column(nullable = false)
+	private Integer bitMask;
 
 	@Column(nullable = false)
 	private String name;
