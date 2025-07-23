@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.global.jwt.JwtService;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
