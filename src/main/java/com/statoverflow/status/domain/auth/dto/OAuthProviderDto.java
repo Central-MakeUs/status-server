@@ -8,6 +8,11 @@ public record OAuthProviderDto(
 	ProviderType providerType,
 
 	@JsonProperty("provider_id")
-	String providerId) {
+	String providerId) implements SocialLoginReturnDto {
 
+	@Override
+	@JsonProperty("type")
+	public String type() {
+		return "SIGNUP";
+	}
 }

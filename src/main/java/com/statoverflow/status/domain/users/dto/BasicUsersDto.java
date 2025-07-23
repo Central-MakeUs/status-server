@@ -1,8 +1,10 @@
 package com.statoverflow.status.domain.users.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.statoverflow.status.domain.auth.dto.SocialLoginReturnDto;
 import com.statoverflow.status.domain.users.entity.Users;
 
-public record BasicUsersDto(Long id, String nickname) {
+public record BasicUsersDto(Long id, String nickname) implements SocialLoginReturnDto {
 	public static BasicUsersDto from(Users user) {
 		return new BasicUsersDto(
 			user.getId(),
@@ -10,4 +12,9 @@ public record BasicUsersDto(Long id, String nickname) {
 		);
 	}
 
+	@Override
+	@JsonProperty("type")
+	public String type() {
+		return "LOGIN";
+	}
 };

@@ -62,22 +62,4 @@ public class ApiResponse<T> {
                         .build());
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> errorWithData(ErrorType errorType, T data) {
-        return ResponseEntity.status(errorType.getStatus())
-            .body(ApiResponse.<T>builder()
-                .status(errorType.getStatus().value())
-                .code(errorType.getErrorCode())
-                .message(errorType.getMessage())
-                .data(data)
-                .build());
-    }
-
-    public static ResponseEntity<ApiResponse<Object>> errorWithObject(ErrorType errorType) {
-        return ResponseEntity.status(errorType.getStatus())
-            .body(ApiResponse.<Object>builder()
-                .status(errorType.getStatus().value())
-                .code(errorType.getErrorCode())
-                .message(errorType.getMessage())
-                .build());
-    }
 }
