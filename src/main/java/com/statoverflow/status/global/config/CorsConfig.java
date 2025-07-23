@@ -21,7 +21,8 @@ public class CorsConfig implements WebMvcConfigurer {
 		configuration.setAllowedOrigins(
 			List.of("http://localhost:5500",
 				"http://localhost:5173",
-				"https://status-front-rho.vercel.app"));
+				"https://status-front-rho.vercel.app",
+				"*"));
 		// 허용 메서드 지정
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		// 클라이언트 요청 허용 헤더
@@ -41,7 +42,8 @@ public class CorsConfig implements WebMvcConfigurer {
 		registry.addMapping("/**")
 			.allowedOrigins("http://localhost:5500",
 				"http://localhost:5173",
-				"https://status-front-rho.vercel.app")
+				"https://status-front-rho.vercel.app",
+				"*")
 			.allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
 			.allowedHeaders("*")
 			.allowCredentials(true)
