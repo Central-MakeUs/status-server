@@ -4,6 +4,8 @@ import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
 import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
 import com.statoverflow.status.domain.master.entity.Attribute;
 import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
+import com.statoverflow.status.global.error.ErrorType;
+import com.statoverflow.status.global.exception.CustomException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,19 @@ public class UsersServiceImpl implements UsersService{
 
 		log.info("회원가입 완료: {}", user.getId());
 		return BasicUsersDto.from(user);
+	}
+
+	@Override
+	public void updateNickname(Long userId, String nickname) {
+		Users user = usersRepository.findById(userId)
+			.orElseThrow(() -> new CustomException(ErrorType.RESOURCE_NOT_FOUND));
+
+		if(user.getNickname() != null && user.getNickname().equals(nickname)) {
+			throw new CustomException(ErrorType.NICKNAME_NOT_CHANGED);
+		}
+		user.setNickname(nickname);
+		
+		// todo: tag 바꾸는 작업 실행
 	}
 
 	private void initializeUserAttributes(Users user) {
