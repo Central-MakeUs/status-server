@@ -37,4 +37,13 @@ public class QuestController {
 
 	}
 
+	@GetMapping("/reroll-themes")
+	public ResponseEntity<ApiResponse<List<ThemeResponseDto>>> rerollThemes(@CurrentUser BasicUsersDto user,
+		@RequestParam List<Integer> attributes,
+		@RequestParam List<Integer> themes) {
+
+		return ApiResponse.ok(questService.rerollThemes(attributes, themes));
+
+	}
+
 }

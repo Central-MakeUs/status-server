@@ -1,7 +1,10 @@
 package com.statoverflow.status;
 
+import java.util.Random;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @SpringBootApplication
@@ -12,4 +15,8 @@ public class StatusApplication {
 		SpringApplication.run(StatusApplication.class, args);
 	}
 
+	@Bean
+	public Random random() {
+		return new Random(); // 새 Random 인스턴스 생성 및 반환
+	}
 }
