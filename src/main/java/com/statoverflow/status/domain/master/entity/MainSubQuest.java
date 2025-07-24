@@ -24,12 +24,10 @@ public class MainSubQuest {
 	@EmbeddedId
 	private MainSubQuestId id;
 
-
 	@MapsId("mainQuestId")
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "main_quest_id", insertable = false, updatable = false)
 	private MainQuest mainQuest;
-
 
 	@MapsId("subQuestId")
 	@ManyToOne(fetch = FetchType.LAZY)
