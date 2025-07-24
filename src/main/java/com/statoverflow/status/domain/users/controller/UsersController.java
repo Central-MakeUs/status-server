@@ -1,10 +1,9 @@
 package com.statoverflow.status.domain.users.controller;
 
+import com.statoverflow.status.domain.users.dto.NicknameRequestDto;
+import com.statoverflow.status.global.annotation.CurrentUser;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.service.TokenService;
@@ -30,6 +29,12 @@ public class UsersController {
 		BasicUsersDto user = usersService.signUp(req);
 		tokenService.issueAndSetTokens(user, response);
 		return ApiResponse.created(user);
+	}
+
+	@PatchMapping("/nickname")
+	public ResponseEntity<ApiResponse<BasicUsersDto>> updateNickname(@CurrentUser BasicUsersDto users, @RequestBody NicknameRequestDto req, HttpServletResponse response) {
+		usersService.updateNickname(users.id(), req.nickname());
+		return ApiResponse.noContent();
 	}
 
 }

@@ -1,6 +1,7 @@
 package com.statoverflow.status.global.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -49,6 +50,13 @@ public class ApiResponse<T> {
                 .body(ApiResponse.<T>builder()
                         .status(HttpStatus.CREATED.value())
                         .data(data)
+                        .build());
+    }
+
+    public static <T> ResponseEntity<ApiResponse<T>> noContent() {
+        return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                .body(ApiResponse.<T>builder()
+                        .status(HttpStatus.NO_CONTENT.value())
                         .build());
     }
 

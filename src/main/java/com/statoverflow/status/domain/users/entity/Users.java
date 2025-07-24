@@ -38,6 +38,7 @@ public class Users {
 	@Column(nullable = false)
 	private String tag;
 
+	@Setter
 	@Column(nullable = false)
 	private String nickname;
 
