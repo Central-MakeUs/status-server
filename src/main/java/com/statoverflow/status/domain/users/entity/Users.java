@@ -36,7 +36,7 @@ public class Users {
 	private Long id;
 
 	@Column(nullable = false)
-	private String uuid;
+	private String tag;
 
 	@Column(nullable = false)
 	private String nickname;

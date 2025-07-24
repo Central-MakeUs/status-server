@@ -1,6 +1,8 @@
 package com.statoverflow.status.domain.quest.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -10,16 +12,19 @@ import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.quest.enums.QuestStatus;
 import com.statoverflow.status.domain.users.entity.Users;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -41,11 +46,11 @@ public class UsersMainQuest {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "users_id", nullable = false)
 	private Users user;
 
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "main_quest_id", nullable = false)
 	private MainQuest mainQuest;
 
@@ -87,5 +92,9 @@ public class UsersMainQuest {
 	protected void onCreate() {
 		this.status = QuestStatus.ACTIVE;
 	}
+
+	@OneToMany(mappedBy = "mainQuest", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	private List<UsersSubQuest> usersSubQuests = new ArrayList<>();
+
 
 }

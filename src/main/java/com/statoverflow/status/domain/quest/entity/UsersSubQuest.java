@@ -1,5 +1,8 @@
 package com.statoverflow.status.domain.quest.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.statoverflow.status.domain.master.entity.Attribute;
@@ -8,19 +11,24 @@ import com.statoverflow.status.domain.master.entity.SubQuest;
 import com.statoverflow.status.domain.master.enums.ActionUnitType;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.enums.QuestStatus;
+import com.statoverflow.status.domain.users.entity.Users;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.criteria.JoinType;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +36,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "users_main_quest")
+@Table(name = "users_sub_quest")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -40,9 +48,13 @@ public class UsersSubQuest {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "users_id", nullable = false)
+	private Users users;
+
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "main_quest_id", nullable = false)
-	private MainQuest mainQuest;
+	private UsersMainQuest mainQuest;
 
 	@OneToOne
 	@JoinColumn(name = "sub_quest_id", nullable = false)
@@ -78,5 +90,9 @@ public class UsersSubQuest {
 
 	@Column(nullable = true)
 	private Integer exp2;
+
+	@OneToMany(mappedBy = "usersSubQuest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private List<UsersSubQuestLog> logs = new ArrayList<>();
+
 
 }
