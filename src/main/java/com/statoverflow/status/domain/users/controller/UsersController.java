@@ -1,0 +1,35 @@
+package com.statoverflow.status.domain.users.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
+import com.statoverflow.status.domain.auth.service.TokenService;
+import com.statoverflow.status.domain.users.dto.BasicUsersDto;
+import com.statoverflow.status.domain.users.service.UsersService;
+import com.statoverflow.status.global.response.ApiResponse;
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@RestController
+@RequestMapping("/users")
+@RequiredArgsConstructor
+public class UsersController {
+
+	private final UsersService usersService;
+	private final TokenService tokenService;
+
+	@PostMapping("/sign-up")
+	public ResponseEntity<ApiResponse<BasicUsersDto>> signUp(@RequestBody SignUpRequestDto req, HttpServletResponse response) {
+		BasicUsersDto user = usersService.signUp(req);
+		tokenService.issueAndSetTokens(user, response);
+		return ApiResponse.created(user);
+	}
+
+}

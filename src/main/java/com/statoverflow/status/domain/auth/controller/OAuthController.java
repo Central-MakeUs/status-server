@@ -77,11 +77,4 @@ public class OAuthController {
 
     }
 
-    @PostMapping("/sign-up")
-    public ResponseEntity<ApiResponse<BasicUsersDto>> signUp(@RequestBody SignUpRequestDto req, HttpServletResponse response) {
-        BasicUsersDto user = usersService.signUp(req);
-        tokenService.issueAndSetTokens(user, response);
-        return ApiResponse.ok(user);
-    }
-
 }
