@@ -4,5 +4,7 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public enum ProviderType {
-	KAKAO, GOOGLE, APPLE
+	KAKAO("kakao"), GOOGLE("google"), APPLE("apple");
+
+	private final String field;
 }

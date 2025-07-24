@@ -6,10 +6,17 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.statoverflow.status.domain.master.entity.Attribute;
 import com.statoverflow.status.domain.master.entity.MainQuest;
+import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
+import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
+import com.statoverflow.status.domain.quest.entity.UsersSubQuestLog;
+import com.statoverflow.status.domain.users.enums.SourceType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -35,15 +42,19 @@ public class UsersAttributeLog {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "users_id", nullable = false)
 	private Users user;
 
-	@ManyToOne
-	@JoinColumn(name = "main_quest_id", nullable = false)
-	private MainQuest mainQuest;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "main_quest_id", nullable = true)
+	private UsersMainQuest mainQuest;
 
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "sub_quest_id", nullable = true)
+	private UsersSubQuestLog subQuestLog;
+
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "attribute_id", nullable = false)
 	private Attribute attribute;
 
@@ -53,5 +64,9 @@ public class UsersAttributeLog {
 	@CreatedDate
 	@Column(nullable = false)
 	private LocalDateTime createdAt;
+
+	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
+	private SourceType sourceType;
 
 }

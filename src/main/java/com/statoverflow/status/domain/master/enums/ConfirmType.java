@@ -1,8 +1,10 @@
 package com.statoverflow.status.domain.master.enums;
 
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 
-@RequiredArgsConstructor
+@AllArgsConstructor
 public enum ConfirmType {
-	MOOD_LOG,
+	MOOD_LOG("mood_log");
+
+	private final String field;
 }
