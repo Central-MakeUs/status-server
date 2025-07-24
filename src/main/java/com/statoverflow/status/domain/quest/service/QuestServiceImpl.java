@@ -14,8 +14,11 @@ import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
 import com.statoverflow.status.domain.master.entity.Attribute;
+import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.master.entity.QuestTheme;
+import com.statoverflow.status.domain.quest.dto.MainQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.ThemeResponseDto;
+import com.statoverflow.status.domain.quest.repository.MainQuestRepository;
 import com.statoverflow.status.domain.quest.repository.ThemeRepository;
 import com.statoverflow.status.global.error.ErrorType;
 import com.statoverflow.status.global.exception.CustomException;
@@ -30,6 +33,7 @@ public class QuestServiceImpl implements QuestService{
 
 	private final AttributeRepository attributeRepository;
 	private final ThemeRepository themeRepository;
+	private final MainQuestRepository mainQuestRepository;
 	private final Random random;
 
 	@Override
@@ -48,7 +52,7 @@ public class QuestServiceImpl implements QuestService{
 		log.debug("변환된 테마 ID: {}", themeResponseDtos.stream().map(ThemeResponseDto::id).collect(Collectors.toList()));
 
 
-		List<ThemeResponseDto> selectedThemes = selectRandomThemes(themeResponseDtos, 4);
+		List<ThemeResponseDto> selectedThemes = selectRandoms(themeResponseDtos, 4);
 		log.info("getThemes 메서드 완료. 최종 선택된 테마 개수: {}", selectedThemes.size());
 		log.info("최종 선택된 테마 ID: {}", selectedThemes.stream().map(ThemeResponseDto::id).collect(Collectors.toList()));
 
@@ -111,6 +115,128 @@ public class QuestServiceImpl implements QuestService{
 		return finalSelectedThemes;
 	}
 
+	@Override
+	public List<MainQuestResponseDto> getMainQuests(List<Integer> attributes, Long userId, Long theme) {
+		log.info("getMainQuests 메서드 시작. userId: {}, themeId: {}, attributes: {}", userId, theme, attributes);
+
+		// 1. 선택된 Attribute ID 목록을 비트마스크로 조합
+		int selectedAttributesBitmask = calculateCombinedBitmask(attributes);
+		log.debug("계산된 selectedAttributesBitmask: {}", selectedAttributesBitmask);
+
+		// 2. DB에서 메인 퀘스트 필터링 및 조회
+		List<MainQuest> allCandidateMainQuests =
+			mainQuestRepository.findMainQuestsByThemeIdAndAttributesMatch(theme, selectedAttributesBitmask);
+		log.debug("DB 조회 결과 (allCandidateMainQuests) 개수: {}", allCandidateMainQuests.size());
+		log.debug("DB 조회 결과 (allCandidateMainQuests) ID: {}", allCandidateMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
+
+		// todo: 3. 진행중인 퀘스트 제외
+		List<MainQuest> availableMainQuests = allCandidateMainQuests;
+		log.debug("진행중인 퀘스트 제외 후 MainQuest 개수: {}", availableMainQuests.size());
+		log.debug("진행중인 퀘스트 제외 후 MainQuest ID: {}", availableMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
+
+
+		// 4. MainQuest 엔티티를 MainQuestResponseDto로 변환
+		List<MainQuestResponseDto> mainQuestDtos = availableMainQuests.stream()
+			.map(mainQuest -> new MainQuestResponseDto(mainQuest.getId(), mainQuest.getName())) // theme.getId() 사용
+			.collect(Collectors.toList());
+		log.debug("MainQuestResponseDto 변환 완료. 변환된 메인 퀘스트 개수: {}", mainQuestDtos.size());
+		log.debug("변환된 메인 퀘스트 ID: {}", mainQuestDtos.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
+
+		// 5. 리스트를 무작위로 섞고, 4개만 반환
+		List<MainQuestResponseDto> selectedMainQuests = selectRandoms(mainQuestDtos, 4);
+		log.info("getMainQuests 메서드 완료. 최종 선택된 메인 퀘스트 개수: {}", selectedMainQuests.size());
+		log.info("최종 선택된 메인 퀘스트 ID: {}", selectedMainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
+
+		return selectedMainQuests;
+	}
+
+	@Override
+	public List<MainQuestResponseDto> rerollMainQuests(List<Integer> attributes, List<Long> mainQuestsToExclude, Long userId, Long themeId) {
+		log.info("rerollMainQuests 메서드 시작. attributes: {}, mainQuestsToExclude: {}, userId: {}, themeId: {}", attributes, mainQuestsToExclude, userId, themeId);
+
+		// 1. 선택된 Attribute ID 목록을 비트마스크로 조합
+		int selectedAttributesBitmask = calculateCombinedBitmask(attributes);
+		log.debug("rerollMainQuests: 계산된 selectedAttributesBitmask: {}", selectedAttributesBitmask);
+
+		// 2. 제외할 메인 퀘스트 ID Set 생성
+		Set<Long> excludeMainQuestIds = mainQuestsToExclude.stream().collect(Collectors.toSet());
+		log.debug("rerollMainQuests: 제외할 메인 퀘스트 ID (Set): {}", excludeMainQuestIds);
+
+		// 3. DB에서 모든 후보 메인 퀘스트 조회 (선택된 테마와 능력치 조건 만족)
+		List<MainQuest> allCandidateMainQuests =
+			mainQuestRepository.findMainQuestsByThemeIdAndAttributesMatch(themeId, selectedAttributesBitmask);
+		log.debug("rerollMainQuests: DB 조회 결과 (allCandidateMainQuests) 개수: {}", allCandidateMainQuests.size());
+		log.debug("rerollMainQuests: DB 조회 결과 (allCandidateMainQuests) ID: {}", allCandidateMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
+
+		// todo: 4. 진행중인 퀘스트 제외 - 기존 퀘스트 및 리롤 퀘스트 모두에 적용
+		List<MainQuest> currentAvailableMainQuests = allCandidateMainQuests; // 현재는 필터링 없음
+		log.debug("rerollMainQuests: 진행중인 퀘스트 제외 (미구현) 후 MainQuest 개수: {}", currentAvailableMainQuests.size());
+		log.debug("rerollMainQuests: 진행중인 퀘스트 제외 (미구현) 후 MainQuest ID: {}", currentAvailableMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
+
+
+		// 5. 제외할 퀘스트 ID를 기준으로 두 개의 리스트로 분리
+		List<MainQuestResponseDto> nonExcludedMainQuests = currentAvailableMainQuests.stream()
+			.filter(mainQuest -> !excludeMainQuestIds.contains(mainQuest.getId()))
+			.map(mainQuest -> new MainQuestResponseDto(mainQuest.getId(), mainQuest.getName()))
+			.collect(Collectors.toList());
+		log.debug("rerollMainQuests: 제외되지 않은 메인 퀘스트 개수: {}", nonExcludedMainQuests.size());
+		log.debug("rerollMainQuests: 제외되지 않은 메인 퀘스트 ID: {}", nonExcludedMainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
+
+
+		List<MainQuestResponseDto> excludedAndPotentiallyReusableMainQuests = currentAvailableMainQuests.stream()
+			.filter(mainQuest -> excludeMainQuestIds.contains(mainQuest.getId()))
+			.map(mainQuest -> new MainQuestResponseDto(mainQuest.getId(), mainQuest.getName()))
+			.collect(Collectors.toList());
+		log.debug("rerollMainQuests: 제외된 (재사용 가능성 있는) 메인 퀘스트 개수: {}", excludedAndPotentiallyReusableMainQuests.size());
+		log.debug("rerollMainQuests: 제외된 (재사용 가능성 있는) 메인 퀘스트 ID: {}", excludedAndPotentiallyReusableMainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
+
+
+		// 6. 중복이 아닌 퀘스트를 먼저 무작위로 섞음
+		Collections.shuffle(nonExcludedMainQuests, random);
+		log.debug("rerollMainQuests: 제외되지 않은 메인 퀘스트 셔플 후: {}", nonExcludedMainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
+
+		// 7. 제외된 퀘스트도 무작위로 섞음 (나중에 부족할 경우 보충하기 위함)
+		Collections.shuffle(excludedAndPotentiallyReusableMainQuests, random);
+		log.debug("rerollMainQuests: 제외된 메인 퀘스트 셔플 후: {}", excludedAndPotentiallyReusableMainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
+
+
+		int requiredCount = 4;
+
+		// 8. 중복이 아닌 퀘스트에서 필요한 개수만큼 우선적으로 선택하고, 부족한 개수는 제외된 퀘스트에서 보충
+		List<MainQuestResponseDto> finalSelectedMainQuests = Stream.concat(
+				nonExcludedMainQuests.stream(),
+				excludedAndPotentiallyReusableMainQuests.stream()
+			)
+			.limit(requiredCount)
+			.collect(Collectors.toList());
+
+		log.info("rerollMainQuests 메서드 완료. 최종 선택된 메인 퀘스트 개수: {}", finalSelectedMainQuests.size());
+		log.info("최종 선택된 메인 퀘스트 ID: {}", finalSelectedMainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
+
+		return finalSelectedMainQuests;
+	}
+
+	// 비트마스크 계산 로직
+	private int calculateCombinedBitmask(List<Integer> attributes) {
+		if (attributes == null || attributes.isEmpty() || attributes.size() > 2) {
+			log.warn("INVALID_ATTRIBUTES: attributes가 유효하지 않습니다. 입력: {}", attributes);
+			throw new CustomException(ErrorType.INVALID_ATTRIBUTES);
+		}
+
+		int combinedBitmask = attributes.stream()
+			.mapToInt(attributeId ->
+				attributeRepository.findById(attributeId)
+					.map(Attribute::getBitMask)
+					.orElseThrow(() -> {
+						log.warn("INVALID_ATTRIBUTES: 존재하지 않는 attributeId 감지: {}", attributeId);
+						return new CustomException(INVALID_ATTRIBUTES);
+					})
+			)
+			.reduce(0, (acc, bitMask) -> acc | bitMask);
+		log.debug("계산된 combinedBitmask: {}", combinedBitmask);
+		return combinedBitmask;
+	}
+
 	private List<QuestTheme> getAllMatchingThemesByAttributes(List<Integer> attributes) {
 		log.debug("getAllMatchingThemesByAttributes 호출. 입력 attributes: {}", attributes);
 		if (attributes == null || attributes.isEmpty() || attributes.size() > 2) {
@@ -135,15 +261,19 @@ public class QuestServiceImpl implements QuestService{
 		return questThemes;
 	}
 
-	private List<ThemeResponseDto> selectRandomThemes(List<ThemeResponseDto> themes, int count) {
-		log.debug("selectRandomThemes 호출. 대상 테마 개수: {}, 선택 개수: {}", themes.size(), count);
-		Collections.shuffle(themes, random);
-		log.debug("selectRandomThemes: 셔플 후 테마 ID: {}", themes.stream().map(ThemeResponseDto::id).collect(Collectors.toList()));
+	private <T> List<T> selectRandoms(List<T> mainQuests, int count) {
+		log.debug("selectRandomMainQuests 호출. 대상 메인 퀘스트 개수: {}, 선택 개수: {}", mainQuests.size(), count);
+		if (mainQuests.isEmpty()) {
+			log.debug("selectRandomMainQuests: 입력 메인 퀘스트 리스트가 비어있습니다. 빈 리스트 반환.");
+			return Collections.emptyList();
+		}
+		Collections.shuffle(mainQuests, random);
+		// log.debug("selectRandomMainQuests: 셔플 후 메인 퀘스트 ID: {}", mainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
 
-		List<ThemeResponseDto> selected = themes.stream()
+		List<T> selected = mainQuests.stream()
 			.limit(count)
 			.collect(Collectors.toList());
-		log.debug("selectRandomThemes: 최종 선택된 테마 개수: {}, ID: {}", selected.size(), selected.stream().map(ThemeResponseDto::id).collect(Collectors.toList()));
+		// log.debug("selectRandomMainQuests: 최종 선택된 메인 퀘스트 개수: {}, ID: {}", selected.size(), selected.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
 		return selected;
 	}
 }
