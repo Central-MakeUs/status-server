@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class QuestTheme {
 
 	@Id
-	private long id;
+	private Long id;
 
 	@Column(nullable = false)
 	private String name;
