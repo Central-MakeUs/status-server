@@ -70,6 +70,7 @@ public class UsersServiceImpl implements UsersService{
 		// todo: tag 바꾸는 작업 실행
 	}
 
+
 	private void initializeUserAttributes(Users user) {
 		List<Attribute> allAttributes = attributeRepository.findAll();
 
