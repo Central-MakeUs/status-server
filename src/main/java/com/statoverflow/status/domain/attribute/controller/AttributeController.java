@@ -24,7 +24,7 @@ public class AttributeController {
     private final AttributeService attributeService;
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<List<AttributesReturnDto>>> getMyAttributes(@CurrentUser BasicUsersDto user, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<List<AttributesReturnDto>>> getMyAttributes(@CurrentUser BasicUsersDto user) {
         log.info("유저 능력치 정보 요청 수신, 코드: {}", user.toString());
 
         return ApiResponse.ok(attributeService.getAttributes(user.id()));

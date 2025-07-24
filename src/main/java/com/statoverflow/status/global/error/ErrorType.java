@@ -16,8 +16,9 @@ public enum ErrorType {
     UNSUPPORTED_OAUTH_PROVIDER(HttpStatus.BAD_REQUEST, "01-001", "잘못된 소셜 식별자입니다."),
     USER_NOT_FOUND(HttpStatus.UNAUTHORIZED, "01-002", "해당 소셜 계정으로 가입된 사용자를 찾을 수 없습니다."),
 
-    NICKNAME_NOT_CHANGED(HttpStatus.CONFLICT, "02-001", "닉네임이 이전과 동일합니다.")
+    NICKNAME_NOT_CHANGED(HttpStatus.CONFLICT, "02-001", "닉네임이 이전과 동일합니다."),
 
+    INVALID_ATTRIBUTES(HttpStatus.BAD_REQUEST, "03-001", "한 개나 두 개의 능력치를 선택해야 합니다.")
 
 
     ;
