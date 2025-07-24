@@ -11,7 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "attribute")
+@Table(name = "main_quest")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MainQuest {
