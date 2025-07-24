@@ -1,5 +1,9 @@
 package com.statoverflow.status.domain.users.service;
 
+import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
+import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
+import com.statoverflow.status.domain.master.entity.Attribute;
+import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +17,9 @@ import com.statoverflow.status.domain.users.repository.UsersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Slf4j
 @RequiredArgsConstructor
 @Transactional
@@ -20,6 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 public class UsersServiceImpl implements UsersService{
 
 	private final UsersRepository usersRepository;
+	private final UsersAttributeProgressRepository	usersAttributeProgressRepository;
+	private final AttributeRepository attributeRepository;
 
 	@Override
 	public SocialLoginReturnDto getUsersByProvider(OAuthProviderDto provider) {
@@ -35,8 +44,27 @@ public class UsersServiceImpl implements UsersService{
 		log.info("회원가입 시작");
 		Users user = req.toEntity();
 
-		// todo: users_attribute_progress 내 정보 추가
+		usersRepository.save(user); // 2. Users 엔티티 저장
 
-		return BasicUsersDto.from(usersRepository.save(user));
+		// todo: users_attribute_progress 내 정보 추가
+		// 모든 마스터 Attribute에 대해 초기 UsersAttributeProgress 생성 및 저장
+		initializeUserAttributes(user);
+
+
+		log.info("회원가입 완료: {}", user.getId());
+		return BasicUsersDto.from(user);
+	}
+
+	private void initializeUserAttributes(Users user) {
+		List<Attribute> allAttributes = attributeRepository.findAll();
+
+		List<UsersAttributeProgress> initialProgresses = allAttributes.stream()
+				.map(attribute -> UsersAttributeProgress.builder()
+						.user(user)
+						.attribute(attribute)
+						.build())
+				.collect(Collectors.toList());
+
+		usersAttributeProgressRepository.saveAll(initialProgresses);
 	}
 }

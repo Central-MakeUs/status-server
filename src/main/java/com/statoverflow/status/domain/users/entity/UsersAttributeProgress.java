@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @EntityListeners(AuditingEntityListener.class)
-public class UserAttributeProgress {
+public class UsersAttributeProgress {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;

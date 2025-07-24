@@ -1,7 +1,9 @@
 package com.statoverflow.status.domain.attribute.service;
 
-import org.springframework.stereotype.Service;
+import com.statoverflow.status.domain.attribute.dto.AttributesReturnDto;
 
-@Service
+import java.util.List;
+
 public interface AttributeService {
+    public List<AttributesReturnDto> getAttributes(Long userId);
 }
