@@ -2,9 +2,7 @@ package com.statoverflow.status.domain.quest.service;
 
 import java.util.List;
 
-import com.statoverflow.status.domain.quest.dto.CreateQuestRequestDto;
-import com.statoverflow.status.domain.quest.dto.MainQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
 
 public interface MainQuestService {
 

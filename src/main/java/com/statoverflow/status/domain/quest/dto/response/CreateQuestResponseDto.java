@@ -1,4 +1,6 @@
-package com.statoverflow.status.domain.quest.dto;
+package com.statoverflow.status.domain.quest.dto.response;
+
+import com.statoverflow.status.domain.quest.dto.AttributeDto;
 
 import java.time.LocalDate;
 import java.util.List;

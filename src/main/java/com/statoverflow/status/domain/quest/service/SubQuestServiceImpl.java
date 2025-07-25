@@ -11,9 +11,8 @@ import org.springframework.stereotype.Service;
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
 import com.statoverflow.status.domain.master.entity.SubQuest;
 import com.statoverflow.status.domain.quest.dto.AttributeDto;
-import com.statoverflow.status.domain.quest.dto.MainQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.RerollSubQuestRequestDto;
-import com.statoverflow.status.domain.quest.dto.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
 
@@ -158,7 +157,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 		List<AttributeDto> attributes = AttributeDto.fromEntity(mainSubQuest);
 
 		// 2. frequencyType 생성 (랜덤으로 선택)
-		String frequencyTypeDescription = FrequencyType.getRandomFrequencyType().getDescription();
+		FrequencyType frequencyType = FrequencyType.getRandomFrequencyType();
 
 		// 3. actionUnitType 및 actionUnitNum 가져오기
 		String actionUnitTypeUnit = subQuest.getActionUnitType().getUnit();
@@ -172,7 +171,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 
 		return new SubQuestResponseDto(
 			subQuest.getId(),
-			frequencyTypeDescription,
+			frequencyType,
 			actionUnitTypeUnit,
 			actionUnitNumValue,
 			attributes,

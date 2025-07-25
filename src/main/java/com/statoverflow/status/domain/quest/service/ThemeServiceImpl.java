@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.QuestTheme;
-import com.statoverflow.status.domain.quest.dto.ThemeResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.ThemeResponseDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
