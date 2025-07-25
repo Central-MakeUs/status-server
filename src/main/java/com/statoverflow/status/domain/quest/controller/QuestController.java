@@ -80,10 +80,9 @@ public class QuestController {
 	}
 
 	@PostMapping("/reroll-subquests")
-	public ResponseEntity<ApiResponse<List<MainQuestResponseDto>>> rerollSubQuests(@CurrentUser BasicUsersDto user,
+	public ResponseEntity<ApiResponse<List<SubQuestResponseDto>>> rerollSubQuests(@CurrentUser BasicUsersDto user,
 		@RequestBody RerollSubQuestRequestDto dto) {
-		// mainQuestService.subQuestService(dto, user.id());
-		return ApiResponse.ok(null);
+		return ApiResponse.ok(subQuestService.rerollSubQuestRequestDto(dto, user.id()));
 
 	}
 
