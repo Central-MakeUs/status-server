@@ -4,7 +4,7 @@ import java.util.List;
 
 public record RerollSubQuestRequestDto(
 	Long mainQuest,
-	List<Long> attributes,
+	List<Integer> attributes,
 	List<Long> selectedSubQuests,
 	List<Long> gottenSubQuests
 ) {
