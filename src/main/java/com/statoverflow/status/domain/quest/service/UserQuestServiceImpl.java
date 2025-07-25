@@ -79,6 +79,7 @@ public class UserQuestServiceImpl implements UserQuestService {
 					usersSubQuestBuilder.exp2(mainSubQuest.getExp2());
 				}
 
+				// todo : 서브 퀘스트 횟수 별 경험치 차등 지급
 
 				UsersSubQuest usersSubQuest = usersSubQuestBuilder.build();
 				UsersSubQuest savedUsersSubQuest = usersSubQuestRepository.save(usersSubQuest);
