@@ -14,6 +14,7 @@ import com.statoverflow.status.domain.auth.service.TokenService;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.domain.users.enums.ProviderType;
 import com.statoverflow.status.domain.users.service.UsersService;
+import com.statoverflow.status.global.annotation.CurrentUser;
 import com.statoverflow.status.global.jwt.JwtAuthenticationFilter;
 import com.statoverflow.status.global.jwt.JwtService;
 import com.statoverflow.status.global.response.ApiResponse;
@@ -90,5 +91,24 @@ public class OAuthController {
 
         return ApiResponse.ok(res);
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<BasicUsersDto>> logout(@CurrentUser BasicUsersDto user,
+        HttpServletResponse response){
+
+        log.info("로그아웃 요청 수신, 유저: {}", user.toString());
+
+        // 액세스 토큰 쿠키 삭제 (Max-Age=0)
+        jwtService.deleteCookie(response, "access_token");
+        // 새로고침 토큰 쿠키 삭제 (Max-Age=0)
+        jwtService.deleteCookie(response, "refresh_token");
+
+        // todo: user.provider 에 따라 소셜 로그아웃 필요
+        
+        log.info("사용자 로그아웃 처리 및 쿠키 삭제 지시 완료.");
+
+        return ApiResponse.noContent();
+    }
+
 
 }
