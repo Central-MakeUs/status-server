@@ -12,4 +12,5 @@ import java.util.List;
 public interface UsersSubQuestRepository extends JpaRepository<UsersSubQuest, Long> {
     List<UsersSubQuest> findByUsersIdAndStatus(Long userId, QuestStatus status);
 
+    List<UsersSubQuest> findByUsersIdAndMainQuestIdAndStatus(Long userId, Long mainQuestId, QuestStatus questStatus);
 }

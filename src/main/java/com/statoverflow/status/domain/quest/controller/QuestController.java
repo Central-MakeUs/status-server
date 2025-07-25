@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -102,6 +103,14 @@ public class QuestController {
 			@CurrentUser BasicUsersDto user) {
 
 		return ApiResponse.ok(userQuestService.getTodaySubQuests(user.id()));
+
+	}
+
+	@GetMapping("/{id}/today")
+	public ResponseEntity<ApiResponse<List<SubQuestResponseDto.UsersSubQuestResponseDto>>> getTodaySubQuestsByMainQuestId(
+		@PathVariable Long id, @CurrentUser BasicUsersDto user) {
+
+		return ApiResponse.ok(userQuestService.getTodaySubQuests(user.id(), id));
 
 	}
 
