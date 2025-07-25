@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.statoverflow.status.domain.quest.dto.CreateQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.CreateQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.MainQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.RerollSubQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.SubQuestResponseDto;
@@ -17,6 +19,7 @@ import com.statoverflow.status.domain.quest.dto.ThemeResponseDto;
 import com.statoverflow.status.domain.quest.service.MainQuestService;
 import com.statoverflow.status.domain.quest.service.SubQuestService;
 import com.statoverflow.status.domain.quest.service.ThemeService;
+import com.statoverflow.status.domain.quest.service.UserQuestService;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.global.annotation.CurrentUser;
 import com.statoverflow.status.global.response.ApiResponse;
@@ -33,6 +36,7 @@ public class QuestController {
 	private final ThemeService themeService;
 	private final MainQuestService mainQuestService;
 	private final SubQuestService subQuestService;
+	private final UserQuestService userQuestService;
 
 	@GetMapping("/get-themes")
 	public ResponseEntity<ApiResponse<List<ThemeResponseDto>>> getThemes(@CurrentUser BasicUsersDto user,
@@ -83,6 +87,13 @@ public class QuestController {
 	public ResponseEntity<ApiResponse<List<SubQuestResponseDto>>> rerollSubQuests(@CurrentUser BasicUsersDto user,
 		@RequestBody RerollSubQuestRequestDto dto) {
 		return ApiResponse.ok(subQuestService.rerollSubQuestRequestDto(dto, user.id()));
+
+	}
+
+	@PostMapping("/create")
+	public ResponseEntity<ApiResponse<CreateQuestResponseDto>> createQuest(@CurrentUser BasicUsersDto user,
+		@RequestBody CreateQuestRequestDto dto) {
+		return ApiResponse.ok(userQuestService.create(dto, user.id()));
 
 	}
 

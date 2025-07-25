@@ -3,13 +3,35 @@ package com.statoverflow.status.domain.quest.dto;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
+import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
 
 public record AttributeDto(
 	int id,
 	String name,
 	int exp
 ) {
+
+	public static List<AttributeDto> fromMainEntity(MainQuest mainQuest){
+		List<AttributeDto> attributeDtos = new ArrayList<>();
+
+		attributeDtos.add(new AttributeDto(
+			mainQuest.getAttribute1().getId(),
+			mainQuest.getAttribute1().getName(),
+			mainQuest.getExp1()
+		));
+
+		if (mainQuest.getAttribute2() != null) {
+			attributeDtos.add(new AttributeDto(
+				mainQuest.getAttribute2().getId(),
+				mainQuest.getAttribute2().getName(),
+				mainQuest.getExp2()
+			));
+		}
+		return attributeDtos;
+	}
+
 
 	public static List<AttributeDto> fromEntity(MainSubQuest mainSubQuest){
 		List<AttributeDto> attributeDtos = new ArrayList<>();
@@ -25,6 +47,25 @@ public record AttributeDto(
 				mainSubQuest.getAttribute2().getId(),
 				mainSubQuest.getAttribute2().getName(),
 				mainSubQuest.getExp2()
+			));
+		}
+		return attributeDtos;
+	}
+
+	public static List<AttributeDto> fromUsersEntity(UsersSubQuest usersSubQuest){
+		List<AttributeDto> attributeDtos = new ArrayList<>();
+
+		attributeDtos.add(new AttributeDto(
+			usersSubQuest.getAttribute1().getId(),
+			usersSubQuest.getAttribute1().getName(),
+			usersSubQuest.getExp1()
+		));
+
+		if (usersSubQuest.getAttribute2() != null) {
+			attributeDtos.add(new AttributeDto(
+				usersSubQuest.getAttribute2().getId(),
+				usersSubQuest.getAttribute2().getName(),
+				usersSubQuest.getExp2()
 			));
 		}
 		return attributeDtos;

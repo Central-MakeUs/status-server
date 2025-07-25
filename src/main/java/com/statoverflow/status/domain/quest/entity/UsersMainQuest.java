@@ -90,6 +90,16 @@ public class UsersMainQuest {
 
 	@PrePersist
 	protected void onCreate() {
+		this.title = mainQuest.getName();
+		this.attribute1 = mainQuest.getAttribute1();
+		this.attribute2 = mainQuest.getAttribute2();
+		this.exp1 = mainQuest.getExp1();
+		this.exp2 = mainQuest.getExp2();
+		this.attributes = this.attribute1.getBitMask();
+		if (this.attribute2 != null) {
+			this.attributes |= this.attribute2.getBitMask();
+		}
+
 		this.status = QuestStatus.ACTIVE;
 	}
 

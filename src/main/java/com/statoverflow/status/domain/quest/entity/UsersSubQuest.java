@@ -27,6 +27,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.criteria.JoinType;
 import lombok.AccessLevel;
@@ -38,6 +39,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "users_sub_quest")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
@@ -92,6 +94,13 @@ public class UsersSubQuest {
 
 	@OneToMany(mappedBy = "usersSubQuest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<UsersSubQuestLog> logs = new ArrayList<>();
+
+	@PrePersist
+	protected void onCreate() {
+		this.description = subQuest.getName();
+		this.actionUnitType = subQuest.getActionUnitType();
+		this.status = QuestStatus.ACTIVE;
+	}
 
 
 }
