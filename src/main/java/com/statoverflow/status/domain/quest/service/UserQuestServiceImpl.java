@@ -132,6 +132,17 @@ public class UserQuestServiceImpl implements UserQuestService {
 			.collect(Collectors.toList());
 	}
 
+	@Override
+	public List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long userId, Long mainQuestId) {
+		List<UsersSubQuest> questList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatus(userId, mainQuestId,
+			QuestStatus.ACTIVE);
+
+		// 2. 각 서브 퀘스트가 오늘 수행되어야 하는지 판단하고 DTO로 매핑
+		return questList.stream()
+			.map(this::mapToUsersSubQuestResponseDto) // DTO로 매핑
+			.collect(Collectors.toList());
+	}
+
 	private SubQuestResponseDto.UsersSubQuestResponseDto mapToUsersSubQuestResponseDto(UsersSubQuest usersSubQuest) {
 
 		SubQuestResponseDto subQuestInfo = new SubQuestResponseDto(
