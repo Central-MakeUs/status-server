@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.statoverflow.status.domain.quest.dto.CreateQuestRequestDto;
-import com.statoverflow.status.domain.quest.dto.CreateQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.MainQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.RerollSubQuestRequestDto;
-import com.statoverflow.status.domain.quest.dto.SubQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.ThemeResponseDto;
+import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.ThemeResponseDto;
 import com.statoverflow.status.domain.quest.service.MainQuestService;
 import com.statoverflow.status.domain.quest.service.SubQuestService;
 import com.statoverflow.status.domain.quest.service.ThemeService;
@@ -94,6 +94,15 @@ public class QuestController {
 	public ResponseEntity<ApiResponse<CreateQuestResponseDto>> createQuest(@CurrentUser BasicUsersDto user,
 		@RequestBody CreateQuestRequestDto dto) {
 		return ApiResponse.ok(userQuestService.create(dto, user.id()));
+
+	}
+
+
+	@GetMapping("/today")
+	public ResponseEntity<ApiResponse<List<SubQuestResponseDto.UsersSubQuestResponseDto>>> getTodaySubQuests(
+			@CurrentUser BasicUsersDto user) {
+
+		return ApiResponse.ok(null);
 
 	}
 

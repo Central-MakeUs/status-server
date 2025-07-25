@@ -1,34 +1,26 @@
 package com.statoverflow.status.domain.quest.service;
 
-import java.time.LocalDate;
+import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
+import com.statoverflow.status.domain.master.entity.MainQuest;
+import com.statoverflow.status.domain.master.entity.MainSubQuest;
+import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
+import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
+import com.statoverflow.status.domain.quest.repository.*;
+import com.statoverflow.status.domain.users.entity.Users;
+import com.statoverflow.status.domain.users.repository.UsersRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
-import com.statoverflow.status.domain.master.entity.MainQuest;
-import com.statoverflow.status.domain.master.entity.MainSubQuest;
-import com.statoverflow.status.domain.master.entity.SubQuest;
-import com.statoverflow.status.domain.quest.dto.AttributeDto;
-import com.statoverflow.status.domain.quest.dto.CreateQuestRequestDto;
-import com.statoverflow.status.domain.quest.dto.CreateQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.SubQuestResponseDto;
-import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
-import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
-import com.statoverflow.status.domain.quest.repository.MainQuestRepository;
-import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
-import com.statoverflow.status.domain.quest.repository.SubQuestRepository;
-import com.statoverflow.status.domain.quest.repository.UsersMainQuestRepository;
-import com.statoverflow.status.domain.quest.repository.UsersSubQuestRepository;
-import com.statoverflow.status.domain.users.entity.Users;
-import com.statoverflow.status.domain.users.repository.UsersRepository;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -118,4 +110,12 @@ public class UserQuestServiceImpl implements UserQuestService {
 			subQuestResponseDtos
 		);
 	}
+
+	@Override
+	public List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long id) {
+		usersSubQuestRepository.findByUsersIdAndStatus(id, )
+		return List.of();
+	}
+
+
 }

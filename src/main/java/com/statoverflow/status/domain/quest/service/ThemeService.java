@@ -2,7 +2,7 @@ package com.statoverflow.status.domain.quest.service;
 
 import java.util.List;
 
-import com.statoverflow.status.domain.quest.dto.ThemeResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.ThemeResponseDto;
 
 public interface ThemeService {
 
