@@ -8,8 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import com.statoverflow.status.domain.master.entity.MainQuest;
 
 public interface MainQuestRepository extends JpaRepository<MainQuest, Long> {
-	@Query("SELECT mq FROM MainQuest mq WHERE mq.theme.id = :themeId AND (BITAND(mq.linkedAttribute, :selectedAttributesBitmask) = :selectedAttributesBitmask)")
-	List<MainQuest> findMainQuestsByThemeIdAndAttributesMatch(Long themeId, int selectedAttributesBitmask);
+	@Query("SELECT mq FROM MainQuest mq WHERE mq.theme.id = :themeId AND (BITAND(mq.linkedAttribute, :selectedAttributes) = :selectedAttributes)")
+	List<MainQuest> findAllByThemeIdAndAttributes(Long themeId, int selectedAttributes);
 
 
 }

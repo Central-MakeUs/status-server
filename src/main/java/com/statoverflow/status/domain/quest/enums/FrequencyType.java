@@ -1,5 +1,7 @@
 package com.statoverflow.status.domain.quest.enums;
 
+import java.util.Random;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -18,5 +20,12 @@ public enum FrequencyType {
 	MONTHLY_3("monthly_3", "월 3회"),
 	MONTHLY_4("monthly_4", "월 4회");
 
+	private static final Random RANDOM = new Random();
+	private static final FrequencyType[] VALUES = values();
+
 	private final String field, description;
+
+	public static FrequencyType getRandomFrequencyType() {
+		return VALUES[RANDOM.nextInt(VALUES.length)];
+	}
 }
