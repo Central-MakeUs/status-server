@@ -3,12 +3,16 @@ package com.statoverflow.status.global.jwt;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 
 import javax.crypto.SecretKey;
 
@@ -68,7 +72,9 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
     // 토큰 유효성 검증 (더 상세한 예외 처리)
     public boolean validateToken(String token) {
         try {
+            log.info("Validating token {}", token);
             Jwts.parser().verifyWith(secretKey).build().parseClaimsJws(token);
+            log.info("Token validated");
             return true;
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
             log.info("잘못된 JWT 서명입니다.");
@@ -95,6 +101,18 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
 
         return new BasicUsersDto((long) id, nickname);
 
+    }
+
+    public String resolveTokenFromCookie(HttpServletRequest request, String tokenName) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        return Arrays.stream(request.getCookies())
+            .filter(cookie -> tokenName.equals(cookie.getName()))
+            .findFirst()
+            .map(Cookie::getValue)
+            .orElse(null);
     }
 
     public long getAccessTokenValidityInSeconds() {
