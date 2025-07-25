@@ -22,4 +22,5 @@ public interface MainSubQuestRepository extends JpaRepository<MainSubQuest, Main
 		@Param("selectedAttributes") Integer selectedAttributes
 	);
 
+	MainSubQuest findByMainQuestIdAndSubQuestId(Long id, Long id1);
 }

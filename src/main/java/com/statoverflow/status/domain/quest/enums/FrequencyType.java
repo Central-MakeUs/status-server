@@ -2,6 +2,8 @@ package com.statoverflow.status.domain.quest.enums;
 
 import java.util.Random;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +26,7 @@ public enum FrequencyType {
 	private static final FrequencyType[] VALUES = values();
 
 	private final String field, description;
+
 
 	public static FrequencyType getRandomFrequencyType() {
 		return VALUES[RANDOM.nextInt(VALUES.length)];
