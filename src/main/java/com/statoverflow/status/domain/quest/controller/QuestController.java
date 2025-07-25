@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.statoverflow.status.domain.quest.dto.MainQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.ThemeResponseDto;
 import com.statoverflow.status.domain.quest.service.QuestService;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
@@ -59,6 +60,15 @@ public class QuestController {
 		@RequestParam List<Long> mainQuests) {
 
 		return ApiResponse.ok(questService.rerollMainQuests(attributes, mainQuests, user.id(), themes));
+
+	}
+
+	@GetMapping("/get-subquests")
+	public ResponseEntity<ApiResponse<List<SubQuestResponseDto>>> getSubQuests(@CurrentUser BasicUsersDto user,
+		@RequestParam List<Integer> attributes,
+		@RequestParam Long mainQuest) {
+
+		return ApiResponse.ok(questService.getSubQuests(attributes, mainQuest, user.id()));
 
 	}
 

@@ -12,8 +12,8 @@ import com.statoverflow.status.domain.master.entity.QuestTheme;
 @Repository
 public interface ThemeRepository extends JpaRepository<QuestTheme, Long> {
 
-	@Query(value = "SELECT * FROM quest_theme qt WHERE (qt.linked_attribute & :combinedBitmask) > 0", nativeQuery = true)
-	List<QuestTheme> findAllByLinkedAttributeIntersection(@Param("combinedBitmask") int combinedBitmask);
+	@Query(value = "SELECT * FROM quest_theme qt WHERE (qt.linked_attribute & :selectedAttributes) > 0", nativeQuery = true)
+	List<QuestTheme> findAllByAttributes(@Param("selectedAttributes") int selectedAttributes);
 
 
 }
