@@ -47,19 +47,19 @@ public class QuestController {
 	@GetMapping("/get-mainquests")
 	public ResponseEntity<ApiResponse<List<MainQuestResponseDto>>> getMainQuests(@CurrentUser BasicUsersDto user,
 		@RequestParam List<Integer> attributes,
-		@RequestParam Long themes) {
+		@RequestParam Long theme) {
 
-		return ApiResponse.ok(questService.getMainQuests(attributes, user.id(), themes));
+		return ApiResponse.ok(questService.getMainQuests(attributes, user.id(), theme));
 
 	}
 
 	@GetMapping("/reroll-mainquests")
 	public ResponseEntity<ApiResponse<List<MainQuestResponseDto>>> rerollMainQuests(@CurrentUser BasicUsersDto user,
 		@RequestParam List<Integer> attributes,
-		@RequestParam Long themes,
+		@RequestParam Long theme,
 		@RequestParam List<Long> mainQuests) {
 
-		return ApiResponse.ok(questService.rerollMainQuests(attributes, mainQuests, user.id(), themes));
+		return ApiResponse.ok(questService.rerollMainQuests(attributes, mainQuests, user.id(), theme));
 
 	}
 
@@ -71,7 +71,5 @@ public class QuestController {
 		return ApiResponse.ok(questService.getSubQuests(attributes, mainQuest, user.id()));
 
 	}
-
-
 
 }
