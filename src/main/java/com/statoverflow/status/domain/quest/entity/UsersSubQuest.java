@@ -35,6 +35,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users_sub_quest")
@@ -68,6 +69,7 @@ public class UsersSubQuest {
 	@Enumerated(EnumType.STRING)
 	private FrequencyType frequencyType;
 
+	@Setter
 	@Column(nullable = false)
 	private QuestStatus status;
 

@@ -32,6 +32,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users_main_quest")
@@ -84,6 +85,7 @@ public class UsersMainQuest {
 	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
+	@Setter
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private QuestStatus status;
