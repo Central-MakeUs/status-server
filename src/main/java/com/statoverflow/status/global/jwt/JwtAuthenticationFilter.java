@@ -24,14 +24,13 @@ import java.util.Collections;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-	public static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
 	private final JwtService jwtService;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 		throws ServletException, IOException {
 
-		String token = resolveTokenFromCookie(request);
+		String token = jwtService.resolveTokenFromCookie(request, "access_token");
 
 		if (StringUtils.hasText(token) && jwtService.validateToken(token)) {
 			try {
@@ -59,15 +58,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		filterChain.doFilter(request, response);
 	}
 
-	private String resolveTokenFromCookie(HttpServletRequest request) {
-		if (request.getCookies() == null) {
-			return null;
-		}
 
-		return Arrays.stream(request.getCookies())
-			.filter(cookie -> ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName()))
-			.findFirst()
-			.map(Cookie::getValue)
-			.orElse(null);
-	}
 }
