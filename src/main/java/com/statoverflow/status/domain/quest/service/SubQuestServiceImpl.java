@@ -157,7 +157,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 		List<AttributeDto> attributes = AttributeDto.fromEntity(mainSubQuest);
 
 		// 2. frequencyType 생성 (랜덤으로 선택)
-		String frequencyTypeDescription = FrequencyType.getRandomFrequencyType().getDescription();
+		FrequencyType frequencyType = FrequencyType.getRandomFrequencyType();
 
 		// 3. actionUnitType 및 actionUnitNum 가져오기
 		String actionUnitTypeUnit = subQuest.getActionUnitType().getUnit();
@@ -171,7 +171,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 
 		return new SubQuestResponseDto(
 			subQuest.getId(),
-			frequencyTypeDescription,
+			frequencyType,
 			actionUnitTypeUnit,
 			actionUnitNumValue,
 			attributes,

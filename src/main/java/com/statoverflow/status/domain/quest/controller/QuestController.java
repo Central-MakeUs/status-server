@@ -97,12 +97,11 @@ public class QuestController {
 
 	}
 
-
 	@GetMapping("/today")
 	public ResponseEntity<ApiResponse<List<SubQuestResponseDto.UsersSubQuestResponseDto>>> getTodaySubQuests(
 			@CurrentUser BasicUsersDto user) {
 
-		return ApiResponse.ok(null);
+		return ApiResponse.ok(userQuestService.getTodaySubQuests(user.id()));
 
 	}
 
