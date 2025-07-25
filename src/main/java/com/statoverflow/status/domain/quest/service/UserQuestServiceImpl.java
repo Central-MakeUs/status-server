@@ -143,6 +143,18 @@ public class UserQuestServiceImpl implements UserQuestService {
 			.collect(Collectors.toList());
 	}
 
+	@Override
+	@Transactional
+	public void deleteMainQuest(Long mainQuestId) {
+		UsersMainQuest umq = usersMainQuestRepository.findById(mainQuestId).orElseThrow();
+		umq.setStatus(QuestStatus.DELETED);
+		List<UsersSubQuest> usq = umq.getUsersSubQuests();
+		usq.stream()
+			.forEach(subQuestInfo -> {
+				subQuestInfo.setStatus(QuestStatus.DELETED);
+			});
+	}
+
 	private SubQuestResponseDto.UsersSubQuestResponseDto mapToUsersSubQuestResponseDto(UsersSubQuest usersSubQuest) {
 
 		SubQuestResponseDto subQuestInfo = new SubQuestResponseDto(

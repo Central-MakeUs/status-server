@@ -53,9 +53,9 @@ public class ApiResponse<T> {
                         .build());
     }
 
-    public static <T> ResponseEntity<ApiResponse<T>> noContent() {
+    public static  ResponseEntity<ApiResponse<?>> noContent() {
         return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                .body(ApiResponse.<T>builder()
+                .body(ApiResponse.builder()
                         .status(HttpStatus.NO_CONTENT.value())
                         .build());
     }

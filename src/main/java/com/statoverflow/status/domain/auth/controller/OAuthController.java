@@ -93,7 +93,7 @@ public class OAuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<BasicUsersDto>> logout(@CurrentUser BasicUsersDto user,
+    public ResponseEntity<ApiResponse<?>> logout(@CurrentUser BasicUsersDto user,
         HttpServletResponse response){
 
         log.info("로그아웃 요청 수신, 유저: {}", user.toString());

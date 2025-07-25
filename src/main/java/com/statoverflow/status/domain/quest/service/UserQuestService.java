@@ -10,4 +10,6 @@ public interface UserQuestService {
 	CreateQuestResponseDto create(CreateQuestRequestDto dto, Long id);
 	List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long id);
 	List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long userId, Long mainQuestId);
+
+	void deleteMainQuest(Long mainQuestId);
 }

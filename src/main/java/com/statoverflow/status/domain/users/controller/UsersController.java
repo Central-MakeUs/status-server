@@ -32,7 +32,7 @@ public class UsersController {
 	}
 
 	@PatchMapping("/nickname")
-	public ResponseEntity<ApiResponse<BasicUsersDto>> updateNickname(@CurrentUser BasicUsersDto users, @RequestBody NicknameRequestDto req, HttpServletResponse response) {
+	public ResponseEntity<ApiResponse<?>> updateNickname(@CurrentUser BasicUsersDto users, @RequestBody NicknameRequestDto req, HttpServletResponse response) {
 		usersService.updateNickname(users.id(), req.nickname());
 		return ApiResponse.noContent();
 	}
