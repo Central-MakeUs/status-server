@@ -29,6 +29,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "users_sub_quest_log")
 @Getter
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)

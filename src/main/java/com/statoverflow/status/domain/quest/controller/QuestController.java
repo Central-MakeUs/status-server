@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
@@ -136,6 +138,12 @@ public class QuestController {
 
 		return ApiResponse.ok(usersSubQuestService.getSubQuestsLogs(user.id(), id));
 
+	}
+
+	@PostMapping("/sub")
+	public ResponseEntity<ApiResponse<List<AttributeDto>>> doSubQuest(
+		@RequestBody SubQuestLogDto dto, @CurrentUser BasicUsersDto user) {
+		return ApiResponse.ok(usersSubQuestService.doSubQuest(user.id(), dto));
 	}
 
 }

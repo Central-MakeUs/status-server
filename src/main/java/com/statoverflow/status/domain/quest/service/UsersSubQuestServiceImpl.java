@@ -10,8 +10,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
@@ -29,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional
 public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 	private final UsersMainQuestRepository usersMainQuestRepository;
@@ -102,8 +105,8 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 						// 2. log 부분 (SubQuestLog 내부 레코드) 생성
 						// UsersSubQuestLog 엔티티에서 difficulty, memo, id를 추출
-						QuestHistoryByDateDto.SubQuestLogsResponseDto.SubQuestLog subQuestLogDto =
-							new QuestHistoryByDateDto.SubQuestLogsResponseDto.SubQuestLog(
+						SubQuestLogDto subQuestLogDto =
+							new SubQuestLogDto(
 								logEntry.getId(),
 								logEntry.getDifficulty(), // UsersSubQuestLog 엔티티에 getDifficulty() 필요
 								logEntry.getMemo()       // UsersSubQuestLog 엔티티에 getMemo() 필요
@@ -123,6 +126,21 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		return result;
 	}
 
+	@Override
+	public List<AttributeDto> doSubQuest(Long userId, SubQuestLogDto dto) {
+		log.debug("유저 id: {}, userSubQuestId: {}", userId, dto.id());
+		UsersSubQuest usq = usersSubQuestRepository.findByIdAndUsersIdAndStatus(dto.id(), userId, QuestStatus.ACTIVE);
+		log.debug("유저 서브퀘스트 정보: {}", usq.toString());
+		// todo: 인증 횟수에 따라 usersSubQuest 내 QuestStatus 변경해주는 작업. ACTIVE, WEEKLY_COMPLETED, COMPLETED
+
+		UsersSubQuestLog usql = UsersSubQuestLog.builder()
+			.usersSubQuest(usq)
+			.difficulty(dto.difficulty())
+			.memo(dto.memo())
+			.build();
+
+		return AttributeDto.fromUsersSubQuest(usq);
+	}
 
 	private SubQuestResponseDto.UsersSubQuestResponseDto mapToUsersSubQuestResponseDto(UsersSubQuest usersSubQuest) {
 

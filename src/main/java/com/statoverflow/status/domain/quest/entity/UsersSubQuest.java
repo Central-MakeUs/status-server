@@ -36,11 +36,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "users_sub_quest")
 @Getter
 @Builder
+@ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
@@ -71,6 +73,7 @@ public class UsersSubQuest {
 
 	@Setter
 	@Column(nullable = false)
+	@Enumerated(EnumType.STRING)
 	private QuestStatus status;
 
 	@Column(nullable = false)

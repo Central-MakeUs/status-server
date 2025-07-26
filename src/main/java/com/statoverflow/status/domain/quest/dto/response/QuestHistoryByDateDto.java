@@ -3,7 +3,7 @@ package com.statoverflow.status.domain.quest.dto.response;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.statoverflow.status.domain.quest.enums.DifficultyType;
+import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 
 public record QuestHistoryByDateDto(
 	LocalDate date,
@@ -12,13 +12,8 @@ public record QuestHistoryByDateDto(
 
 	public record SubQuestLogsResponseDto(
 		SubQuestResponseDto userSubQuest,
-		SubQuestLog log
+		SubQuestLogDto log
 	) {
-		public record SubQuestLog(
-			Long id,
-			DifficultyType difficulty,
-			String memo
-		) {
-		}
+
 	}
 }
