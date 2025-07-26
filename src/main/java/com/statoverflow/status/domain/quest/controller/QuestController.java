@@ -13,9 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.ThemeResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.UsersMainQuestResponseDto;
@@ -127,6 +128,14 @@ public class QuestController {
 	@GetMapping("/me")
 	public ResponseEntity<ApiResponse<List<UsersMainQuestResponseDto>>> getUsersMainQuests(@CurrentUser BasicUsersDto user) {
 		return ApiResponse.ok(usersMainQuestService.getUsersMainQuests(user.id()));
+	}
+
+	@GetMapping("/{id}/history")
+	public ResponseEntity<ApiResponse<List<QuestHistoryByDateDto>>> getSubQuestsLogsByMainQuestId(
+		@PathVariable Long id, @CurrentUser BasicUsersDto user) {
+
+		return ApiResponse.ok(usersSubQuestService.getSubQuestsLogs(user.id(), id));
+
 	}
 
 }

@@ -44,14 +44,13 @@ public class UsersServiceImpl implements UsersService{
 	public BasicUsersDto signUp(SignUpRequestDto req) {
 
 		log.info("회원가입 시작");
+		// todo: 랜덤 tag 설정
 		Users user = req.toEntity();
 
 		usersRepository.save(user); // 2. Users 엔티티 저장
 
-		// todo: users_attribute_progress 내 정보 추가
 		// 모든 마스터 Attribute에 대해 초기 UsersAttributeProgress 생성 및 저장
 		initializeUserAttributes(user);
-
 
 		log.info("회원가입 완료: {}", user.getId());
 		return BasicUsersDto.from(user);

@@ -3,6 +3,7 @@ package com.statoverflow.status.domain.quest.dto.response;
 import com.statoverflow.status.domain.quest.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public record SubQuestResponseDto(Long id,
@@ -12,9 +13,11 @@ public record SubQuestResponseDto(Long id,
 								  List<AttributeDto> attributes,
 								  String desc) {
 
+
 	public record UsersSubQuestResponseDto(
-			SubQuestResponseDto subQuestInfo,
-			int repeatCnt, // repeatCnt 회 남음
-			boolean essential // 필수 여부
-	){};
+		SubQuestResponseDto subQuestInfo,
+		int repeatCnt, // repeatCnt 회 남음
+		boolean essential // 필수 여부
+	){}
+
 }

@@ -2,14 +2,20 @@ package com.statoverflow.status.domain.quest.service;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
+import com.statoverflow.status.domain.quest.entity.UsersSubQuestLog;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.enums.QuestStatus;
 import com.statoverflow.status.domain.quest.repository.UsersMainQuestRepository;
@@ -53,16 +59,74 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 			.collect(Collectors.toList());
 	}
 
+	@Override
+	public List<QuestHistoryByDateDto> getSubQuestsLogs(Long userId, Long mainQuestId) {
+
+		// todo: mainQuestId에 대한 검증 작업 (예: usersMainQuestRepository를 통해 해당 mainQuestId가 userId에 속하는지 확인)
+
+		// 1. 메인 퀘스트 내 활성/주간 완료 상태의 서브 퀘스트 리스트를 가져옵니다.
+		// findByUsersId...는 findByUsers_Id...로 변경하는 것이 더 명확합니다.
+		List<UsersSubQuest> subQuestList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(
+			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.WEEKLY_COMPLETED));
+
+		// 2. 각 서브 퀘스트에 대한 모든 로그를 가져옵니다.
+		// 성능 최적화를 위해, 특정 기간 내의 로그만 가져오거나,
+		// subQuestList의 ID를 모아서 UsersSubQuestLogRepository에서 IN 쿼리로 한 번에 가져오는 것을 고려해볼 수 있습니다.
+		// List<Long> subQuestIds = subQuestList.stream().map(UsersSubQuest::getId).collect(Collectors.toList());
+		// List<UsersSubQuestLog> allLogs = usersSubQuestLogRepository.findByUsersSubQuestIdIn(subQuestIds);
+		List<UsersSubQuestLog> allLogs = new ArrayList<>();
+		subQuestList.forEach(subQuest -> {
+			// 이 findByUsersSubQuest 메서드가 UsersSubQuestLogRepository에 정의되어 있어야 합니다.
+			// 또는 findByUsersSubQuestId(subQuest.getId()) 사용.
+			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuest(subQuest);
+			allLogs.addAll(logs);
+		});
+
+
+		// 3. logsList를 로그 기록 날짜(LocalDate)별로 그룹화합니다.
+		Map<LocalDate, List<UsersSubQuestLog>> groupedLogs = allLogs.stream()
+			.collect(Collectors.groupingBy(log -> log.getCreatedAt().toLocalDate()));
+
+
+		// 4. 그룹화된 로그를 QuestHistoryByDateDto 리스트로 변환합니다.
+		List<QuestHistoryByDateDto> result = groupedLogs.entrySet().stream()
+			.map(entry -> {
+				LocalDate logDate = entry.getKey(); // 로그가 기록된 날짜
+				List<UsersSubQuestLog> dailyLogs = entry.getValue(); // 해당 날짜의 모든 로그 엔티티
+
+				// 해당 날짜의 각 UsersSubQuestLog를 SubQuestLogsResponseDto로 변환합니다.
+				List<QuestHistoryByDateDto.SubQuestLogsResponseDto> dailyHistoryLogs = dailyLogs.stream()
+					.map(logEntry -> {
+						// UsersSubQuestLog 엔티티에서 필요한 정보 추출
+						UsersSubQuest usersSubQuest = logEntry.getUsersSubQuest(); // UsersSubQuestLog에 UsersSubQuest 참조가 있어야 함
+
+						// 2. log 부분 (SubQuestLog 내부 레코드) 생성
+						// UsersSubQuestLog 엔티티에서 difficulty, memo, id를 추출
+						QuestHistoryByDateDto.SubQuestLogsResponseDto.SubQuestLog subQuestLogDto =
+							new QuestHistoryByDateDto.SubQuestLogsResponseDto.SubQuestLog(
+								logEntry.getId(),
+								logEntry.getDifficulty(), // UsersSubQuestLog 엔티티에 getDifficulty() 필요
+								logEntry.getMemo()       // UsersSubQuestLog 엔티티에 getMemo() 필요
+							);
+
+						// 최종 SubQuestLogsResponseDto 생성
+						return new QuestHistoryByDateDto.SubQuestLogsResponseDto(mapToSubQuestResponseDto(usersSubQuest), subQuestLogDto);
+					})
+					.collect(Collectors.toList());
+
+				// QuestHistoryByDateDto 생성
+				return new QuestHistoryByDateDto(logDate, dailyHistoryLogs);
+			})
+			.sorted(Comparator.comparing(QuestHistoryByDateDto::date).reversed()) // 최신 날짜부터 정렬
+			.collect(Collectors.toList());
+
+		return result;
+	}
+
+
 	private SubQuestResponseDto.UsersSubQuestResponseDto mapToUsersSubQuestResponseDto(UsersSubQuest usersSubQuest) {
 
-		SubQuestResponseDto subQuestInfo = new SubQuestResponseDto(
-			usersSubQuest.getId(),
-			usersSubQuest.getFrequencyType(),
-			usersSubQuest.getActionUnitType().getUnit(),
-			usersSubQuest.getActionUnitNum(),
-			AttributeDto.fromUsersSubQuest(usersSubQuest),
-			usersSubQuest.getDescription()
-		);
+		SubQuestResponseDto subQuestInfo = mapToSubQuestResponseDto(usersSubQuest);
 
 		RepeatAndEssential rae = repeatCntAndEssential(usersSubQuest);
 
@@ -73,6 +137,17 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 			subQuestInfo,
 			repeatCnt,
 			essential
+		);
+	}
+
+	private SubQuestResponseDto mapToSubQuestResponseDto(UsersSubQuest usersSubQuest) {
+		return new SubQuestResponseDto(
+			usersSubQuest.getId(),
+			usersSubQuest.getFrequencyType(),
+			usersSubQuest.getActionUnitType().getUnit(),
+			usersSubQuest.getActionUnitNum(),
+			AttributeDto.fromUsersSubQuest(usersSubQuest),
+			usersSubQuest.getDescription()
 		);
 	}
 
@@ -91,7 +166,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 			case DAILY:
 				log.info("일간 퀘스트 - 로그 조회 시작 날짜: {}", today);
 				int logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
-					today);
+					today.atStartOfDay());
 				log.info("일간 퀘스트 - 오늘 완료된 로그 수: {}", logCnt);
 
 				return new RepeatAndEssential(FrequencyType.DAILY.getPer() - logCnt, logCnt == 0);
@@ -126,7 +201,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 				log.info("주간 퀘스트 - 로그 조회 시작 날짜: {}", currentWeekStartDate);
 
 				logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
-					currentWeekStartDate);
+					currentWeekStartDate.atStartOfDay());
 				log.info("주간 퀘스트 - 현재 주차 내 완료된 로그 수: {}", logCnt);
 
 				int cnt = (usersSubQuest.getFrequencyType().getCnt() - logCnt);
@@ -140,7 +215,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 				logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
 					usersSubQuest.getMainQuest()
-						.getStartDate());
+						.getStartDate().atStartOfDay());
 				log.info("월간 퀘스트 - 현재 월 내 완료된 로그 수: {}", logCnt);
 
 
