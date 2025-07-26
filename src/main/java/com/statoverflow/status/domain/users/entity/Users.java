@@ -46,6 +46,7 @@ public class Users {
 	@Enumerated(EnumType.STRING)
 	private ProviderType providerType;
 
+	@Setter
 	@Column(nullable = false)
 	private String providerId;
 

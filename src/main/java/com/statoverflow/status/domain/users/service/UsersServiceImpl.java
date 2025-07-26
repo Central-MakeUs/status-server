@@ -1,26 +1,28 @@
 package com.statoverflow.status.domain.users.service;
 
-import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
-import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
-import com.statoverflow.status.domain.master.entity.Attribute;
-import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
-import com.statoverflow.status.global.error.ErrorType;
-import com.statoverflow.status.global.exception.CustomException;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
+import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
 import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.dto.SocialLoginReturnDto;
+import com.statoverflow.status.domain.master.entity.Attribute;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.domain.users.entity.Users;
+import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
+import com.statoverflow.status.domain.users.enums.AccountStatus;
 import com.statoverflow.status.domain.users.repository.UsersRepository;
+import com.statoverflow.status.global.error.ErrorType;
+import com.statoverflow.status.global.exception.CustomException;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -69,6 +71,14 @@ public class UsersServiceImpl implements UsersService{
 		// todo: tag 바꾸는 작업 실행
 	}
 
+	@Override
+	public void deleteUser(Long id, HttpServletResponse response) {
+		// providerId 날리기
+		Users user = usersRepository.findById(id).orElseThrow(() -> new CustomException(ErrorType.RESOURCE_NOT_FOUND));
+		user.setStatus(AccountStatus.INACTIVE);
+		user.setProviderId("");
+		usersRepository.save(user);
+	}
 
 	private void initializeUserAttributes(Users user) {
 		List<Attribute> allAttributes = attributeRepository.findAll();
