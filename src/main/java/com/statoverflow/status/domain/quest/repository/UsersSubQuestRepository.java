@@ -15,4 +15,6 @@ public interface UsersSubQuestRepository extends JpaRepository<UsersSubQuest, Lo
     List<UsersSubQuest> findByUsersIdAndMainQuestIdAndStatus(Long userId, Long mainQuestId, QuestStatus questStatus);
 
     List<UsersSubQuest> findByUsersIdAndMainQuestIdAndStatusIn(Long userId, Long mainQuestId, List<QuestStatus> statuses);
+
+    UsersSubQuest findByIdAndUsersIdAndStatus(Long id, Long userId, QuestStatus questStatus);
 }
