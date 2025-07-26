@@ -14,4 +14,6 @@ public interface UsersSubQuestService {
 	List<QuestHistoryByDateDto> getSubQuestsLogs(Long userId, Long mainQuestId);
 
 	List<AttributeDto> doSubQuest(Long userId, SubQuestLogDto dto);
+
+	SubQuestLogDto editSubQuest(Long id, SubQuestLogDto dto);
 }

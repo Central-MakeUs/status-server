@@ -25,6 +25,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users_sub_quest_log")
@@ -43,6 +44,7 @@ public class UsersSubQuestLog {
 	@JoinColumn(name = "users_sub_quest_id", nullable = false)
 	private UsersSubQuest usersSubQuest;
 
+	@Setter
 	@Column(nullable = true)
 	private String memo;
 
@@ -54,6 +56,7 @@ public class UsersSubQuestLog {
 	@LastModifiedDate
 	private LocalDateTime updatedAt;
 
+	@Setter
 	@Column(nullable = false)
 	@Enumerated(EnumType.STRING)
 	private DifficultyType difficulty;
