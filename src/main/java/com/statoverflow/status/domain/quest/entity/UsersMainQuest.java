@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.quest.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,7 @@ public class UsersMainQuest {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "users_id", nullable = false)
-	private Users user;
+	private Users users;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "main_quest_id", nullable = false)
@@ -62,10 +63,10 @@ public class UsersMainQuest {
 	private Integer attributes;
 
 	@Column(nullable = false)
-	private LocalDateTime startDate;
+	private LocalDate startDate;
 
 	@Column(nullable = false)
-	private LocalDateTime endDate;
+	private LocalDate endDate;
 
 	@ManyToOne
 	@JoinColumn(name = "attribute1", nullable = false)

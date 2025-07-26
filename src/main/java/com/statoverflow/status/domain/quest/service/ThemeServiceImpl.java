@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.QuestTheme;
 import com.statoverflow.status.domain.quest.dto.response.ThemeResponseDto;
+import com.statoverflow.status.domain.quest.service.interfaces.ThemeService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

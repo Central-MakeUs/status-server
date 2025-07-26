@@ -18,10 +18,12 @@ import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.ThemeResponseDto;
-import com.statoverflow.status.domain.quest.service.MainQuestService;
-import com.statoverflow.status.domain.quest.service.SubQuestService;
-import com.statoverflow.status.domain.quest.service.ThemeService;
-import com.statoverflow.status.domain.quest.service.UserQuestService;
+import com.statoverflow.status.domain.quest.dto.response.UsersMainQuestResponseDto;
+import com.statoverflow.status.domain.quest.service.interfaces.MainQuestService;
+import com.statoverflow.status.domain.quest.service.interfaces.SubQuestService;
+import com.statoverflow.status.domain.quest.service.interfaces.ThemeService;
+import com.statoverflow.status.domain.quest.service.interfaces.UsersMainQuestService;
+import com.statoverflow.status.domain.quest.service.interfaces.UsersSubQuestService;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.global.annotation.CurrentUser;
 import com.statoverflow.status.global.response.ApiResponse;
@@ -38,7 +40,8 @@ public class QuestController {
 	private final ThemeService themeService;
 	private final MainQuestService mainQuestService;
 	private final SubQuestService subQuestService;
-	private final UserQuestService userQuestService;
+	private final UsersMainQuestService usersMainQuestService;
+	private final UsersSubQuestService usersSubQuestService;
 
 	@GetMapping("/get-themes")
 	public ResponseEntity<ApiResponse<List<ThemeResponseDto>>> getThemes(@CurrentUser BasicUsersDto user,
@@ -95,7 +98,7 @@ public class QuestController {
 	@PostMapping("/create")
 	public ResponseEntity<ApiResponse<CreateQuestResponseDto>> createQuest(@CurrentUser BasicUsersDto user,
 		@RequestBody CreateQuestRequestDto dto) {
-		return ApiResponse.ok(userQuestService.create(dto, user.id()));
+		return ApiResponse.ok(usersMainQuestService.create(dto, user.id()));
 
 	}
 
@@ -103,7 +106,7 @@ public class QuestController {
 	public ResponseEntity<ApiResponse<List<SubQuestResponseDto.UsersSubQuestResponseDto>>> getTodaySubQuests(
 			@CurrentUser BasicUsersDto user) {
 
-		return ApiResponse.ok(userQuestService.getTodaySubQuests(user.id()));
+		return ApiResponse.ok(usersSubQuestService.getTodaySubQuests(user.id()));
 
 	}
 
@@ -111,14 +114,19 @@ public class QuestController {
 	public ResponseEntity<ApiResponse<List<SubQuestResponseDto.UsersSubQuestResponseDto>>> getTodaySubQuestsByMainQuestId(
 		@PathVariable Long id, @CurrentUser BasicUsersDto user) {
 
-		return ApiResponse.ok(userQuestService.getTodaySubQuests(user.id(), id));
+		return ApiResponse.ok(usersSubQuestService.getTodaySubQuests(user.id(), id));
 
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<ApiResponse<?>> deleteMainQuest(@PathVariable Long id, @CurrentUser BasicUsersDto user) {
-		userQuestService.deleteMainQuest(id);
+		usersMainQuestService.deleteMainQuest(id);
 		return ApiResponse.noContent();
+	}
+
+	@GetMapping("/me")
+	public ResponseEntity<ApiResponse<List<UsersMainQuestResponseDto>>> getUsersMainQuests(@CurrentUser BasicUsersDto user) {
+		return ApiResponse.ok(usersMainQuestService.getUsersMainQuests(user.id()));
 	}
 
 }

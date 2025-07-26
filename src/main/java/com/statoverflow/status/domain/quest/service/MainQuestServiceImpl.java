@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
 import com.statoverflow.status.domain.quest.repository.MainQuestRepository;
+import com.statoverflow.status.domain.quest.service.interfaces.MainQuestService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

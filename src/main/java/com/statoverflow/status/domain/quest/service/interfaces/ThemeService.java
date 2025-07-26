@@ -1,4 +1,4 @@
-package com.statoverflow.status.domain.quest.service;
+package com.statoverflow.status.domain.quest.service.interfaces;
 
 import java.util.List;
 

@@ -15,6 +15,7 @@ import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
+import com.statoverflow.status.domain.quest.service.interfaces.SubQuestService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

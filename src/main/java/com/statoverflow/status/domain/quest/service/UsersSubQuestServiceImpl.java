@@ -3,18 +3,13 @@ package com.statoverflow.status.domain.quest.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.statoverflow.status.domain.master.entity.MainQuest;
-import com.statoverflow.status.domain.master.entity.MainSubQuest;
 import com.statoverflow.status.domain.quest.dto.AttributeDto;
-import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
-import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
@@ -25,100 +20,21 @@ import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
 import com.statoverflow.status.domain.quest.repository.UsersMainQuestRepository;
 import com.statoverflow.status.domain.quest.repository.UsersSubQuestLogRepository;
 import com.statoverflow.status.domain.quest.repository.UsersSubQuestRepository;
-import com.statoverflow.status.domain.users.entity.Users;
+import com.statoverflow.status.domain.quest.service.interfaces.UsersSubQuestService;
 import com.statoverflow.status.domain.users.repository.UsersRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
-@Transactional
-public class UserQuestServiceImpl implements UserQuestService {
+@Slf4j
+public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
-	private final MainQuestRepository mainQuestRepository;
-	private final UsersRepository usersRepository;
 	private final UsersMainQuestRepository usersMainQuestRepository;
 	private final UsersSubQuestRepository usersSubQuestRepository;
 	private final UsersSubQuestLogRepository usersSubQuestLogRepository;
-	private final MainSubQuestRepository mainSubQuestRepository;
 
-	@Override
-	public CreateQuestResponseDto create(CreateQuestRequestDto dto, Long userId) {
-
-		MainQuest mainQuest = mainQuestRepository.findById(dto.mainQuest()).orElseThrow();
-		Users user = usersRepository.findById(userId).orElseThrow();
-
-		// 1. user main quest 내 등록
-		UsersMainQuest umq = UsersMainQuest.builder()
-			.mainQuest(mainQuest)
-			.user(user)
-			.startDate(dto.startDate().atStartOfDay())
-			.endDate(dto.endDate().atStartOfDay())
-			.build();
-
-		usersMainQuestRepository.save(umq);
-
-		// 2. user sub quest 내 등록
-		List<UsersSubQuest> createdUsersSubQuests = new ArrayList<>();
-		dto.subQuests().stream()
-			.forEach(subQuestInfo -> {
-				MainSubQuest mainSubQuest = mainSubQuestRepository.findByMainQuestIdAndSubQuestId(mainQuest.getId(), subQuestInfo.id());
-				UsersSubQuest.UsersSubQuestBuilder usersSubQuestBuilder = UsersSubQuest.builder()
-					.users(user)
-					.mainQuest(umq)
-					.subQuest(mainSubQuest.getSubQuest())
-					.frequencyType(subQuestInfo.frequencyType())
-					.actionUnitNum(subQuestInfo.actionUnitNum())
-					.attribute1(mainSubQuest.getAttribute1())
-					.exp1(mainSubQuest.getExp1());
-
-				if (mainSubQuest.getAttribute2() != null) {
-					usersSubQuestBuilder.attribute2(mainSubQuest.getAttribute2());
-					usersSubQuestBuilder.exp2(mainSubQuest.getExp2());
-				}
-
-				// todo : 서브 퀘스트 횟수 별 경험치 차등 지급
-
-				UsersSubQuest usersSubQuest = usersSubQuestBuilder.build();
-				UsersSubQuest savedUsersSubQuest = usersSubQuestRepository.save(usersSubQuest);
-				createdUsersSubQuests.add(savedUsersSubQuest);
-			});
-
-
-		List<AttributeDto> mainQuestAttributes = AttributeDto.fromMainEntity(mainQuest);
-
-
-		// SubQuestResponseDto 리스트 생성
-		List<SubQuestResponseDto> subQuestResponseDtos = createdUsersSubQuests.stream()
-			.map(usq -> {
-				List<AttributeDto> subQuestAttributes = AttributeDto.fromUsersEntity(usq);
-
-				return new SubQuestResponseDto(
-					usq.getId(),
-					usq.getFrequencyType(),
-					usq.getActionUnitType().getUnit(),
-					usq.getActionUnitNum(),
-					subQuestAttributes,
-					usq.getDescription()
-				);
-			})
-			.collect(Collectors.toList());
-
-		long totalDaysBetween = ChronoUnit.DAYS.between(dto.startDate(), dto.endDate());
-		int totalWeeks = (int) Math.ceil((double) totalDaysBetween / 7.0);
-
-		return new CreateQuestResponseDto(
-			umq.getId(),
-			umq.getStartDate().toLocalDate(),
-			umq.getEndDate().toLocalDate(),
-			totalWeeks,
-			umq.getTitle(),
-			mainQuestAttributes,
-			subQuestResponseDtos
-		);
-	}
 
 	@Override
 	public List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long id) {
@@ -141,18 +57,6 @@ public class UserQuestServiceImpl implements UserQuestService {
 		return questList.stream()
 			.map(this::mapToUsersSubQuestResponseDto) // DTO로 매핑
 			.collect(Collectors.toList());
-	}
-
-	@Override
-	@Transactional
-	public void deleteMainQuest(Long mainQuestId) {
-		UsersMainQuest umq = usersMainQuestRepository.findById(mainQuestId).orElseThrow();
-		umq.setStatus(QuestStatus.DELETED);
-		List<UsersSubQuest> usq = umq.getUsersSubQuests();
-		usq.stream()
-			.forEach(subQuestInfo -> {
-				subQuestInfo.setStatus(QuestStatus.DELETED);
-			});
 	}
 
 	private SubQuestResponseDto.UsersSubQuestResponseDto mapToUsersSubQuestResponseDto(UsersSubQuest usersSubQuest) {
@@ -191,10 +95,9 @@ public class UserQuestServiceImpl implements UserQuestService {
 
 		switch (usersSubQuest.getFrequencyType()) {
 			case DAILY:
-				LocalDateTime startOfToday = today.atStartOfDay();
-				log.info("일간 퀘스트 - 로그 조회 시작 시각: {}", startOfToday);
+				log.info("일간 퀘스트 - 로그 조회 시작 날짜: {}", today);
 				int logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
-					startOfToday);
+					today);
 				log.info("일간 퀘스트 - 오늘 완료된 로그 수: {}", logCnt);
 
 				return new RepeatAndEssential(FrequencyType.DAILY.getPer() - logCnt, logCnt == 0);
@@ -207,7 +110,7 @@ public class UserQuestServiceImpl implements UserQuestService {
 			case WEEKLY_6:
 
 				// 1. 현재 주차의 시작일을 구합니다.
-				LocalDate mainQuestStartDate = usersSubQuest.getMainQuest().getStartDate().toLocalDate();
+				LocalDate mainQuestStartDate = usersSubQuest.getMainQuest().getStartDate();
 				long daysSinceMainQuestStart = ChronoUnit.DAYS.between(mainQuestStartDate, today);
 				long currentWeekOffset = (daysSinceMainQuestStart / 7) * 7;
 				LocalDate currentWeekStartDate = mainQuestStartDate.plusDays(currentWeekOffset);
@@ -226,12 +129,10 @@ public class UserQuestServiceImpl implements UserQuestService {
 				long daysFromEndOfCurrentWeek = ChronoUnit.DAYS.between(today, currentWeekEndDate) + 1;
 				log.info("주간 퀘스트 - 현재 주차 종료일까지 남은 일수 (종료일 포함): {}", daysFromEndOfCurrentWeek);
 
-
-				LocalDateTime periodStartDateTime = currentWeekStartDate.atStartOfDay();
-				log.info("주간 퀘스트 - 로그 조회 시작 시각: {}", periodStartDateTime);
+				log.info("주간 퀘스트 - 로그 조회 시작 날짜: {}", currentWeekStartDate);
 
 				logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
-					periodStartDateTime);
+					currentWeekStartDate);
 				log.info("주간 퀘스트 - 현재 주차 내 완료된 로그 수: {}", logCnt);
 
 				int cnt = (usersSubQuest.getFrequencyType().getCnt() - logCnt);
@@ -249,7 +150,7 @@ public class UserQuestServiceImpl implements UserQuestService {
 				log.info("월간 퀘스트 - 현재 월 내 완료된 로그 수: {}", logCnt);
 
 
-				LocalDate endDate = usersSubQuest.getMainQuest().getEndDate().toLocalDate();
+				LocalDate endDate = usersSubQuest.getMainQuest().getEndDate();
 				Long daysFromEndDate = ChronoUnit.DAYS.between(endDate, today) + 1;
 
 
@@ -261,5 +162,4 @@ public class UserQuestServiceImpl implements UserQuestService {
 				return new RepeatAndEssential(0, false);
 		}
 	}
-
 }
