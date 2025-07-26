@@ -155,7 +155,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 		SubQuest subQuest = mainSubQuest.getSubQuest();
 
 		// 1. attributes 필드 생성 (AttributeDto.fromMainSubQuest 사용)
-		List<AttributeDto> attributes = AttributeDto.fromEntity(mainSubQuest);
+		List<AttributeDto> attributes = AttributeDto.fromMainSubQuest(mainSubQuest);
 
 		// 2. frequencyType 생성 (랜덤으로 선택)
 		FrequencyType frequencyType = FrequencyType.getRandomFrequencyType();

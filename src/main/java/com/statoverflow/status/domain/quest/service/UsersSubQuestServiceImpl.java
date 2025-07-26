@@ -1,27 +1,21 @@
 package com.statoverflow.status.domain.quest.service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.statoverflow.status.domain.quest.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
-import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.enums.QuestStatus;
-import com.statoverflow.status.domain.quest.repository.MainQuestRepository;
-import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
 import com.statoverflow.status.domain.quest.repository.UsersMainQuestRepository;
 import com.statoverflow.status.domain.quest.repository.UsersSubQuestLogRepository;
 import com.statoverflow.status.domain.quest.repository.UsersSubQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.UsersSubQuestService;
-import com.statoverflow.status.domain.users.repository.UsersRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +60,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 			usersSubQuest.getFrequencyType(),
 			usersSubQuest.getActionUnitType().getUnit(),
 			usersSubQuest.getActionUnitNum(),
-			AttributeDto.fromUsersEntity(usersSubQuest),
+			AttributeDto.fromUsersSubQuest(usersSubQuest),
 			usersSubQuest.getDescription()
 		);
 

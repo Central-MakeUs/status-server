@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
+import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
 
 public record AttributeDto(
@@ -13,7 +14,7 @@ public record AttributeDto(
 	int exp
 ) {
 
-	public static List<AttributeDto> fromMainEntity(MainQuest mainQuest){
+	public static List<AttributeDto> fromMainQuest(MainQuest mainQuest){
 		List<AttributeDto> attributeDtos = new ArrayList<>();
 
 		attributeDtos.add(new AttributeDto(
@@ -33,7 +34,7 @@ public record AttributeDto(
 	}
 
 
-	public static List<AttributeDto> fromEntity(MainSubQuest mainSubQuest){
+	public static List<AttributeDto> fromMainSubQuest(MainSubQuest mainSubQuest){
 		List<AttributeDto> attributeDtos = new ArrayList<>();
 
 		attributeDtos.add(new AttributeDto(
@@ -52,7 +53,7 @@ public record AttributeDto(
 		return attributeDtos;
 	}
 
-	public static List<AttributeDto> fromUsersEntity(UsersSubQuest usersSubQuest){
+	public static List<AttributeDto> fromUsersSubQuest(UsersSubQuest usersSubQuest){
 		List<AttributeDto> attributeDtos = new ArrayList<>();
 
 		attributeDtos.add(new AttributeDto(
@@ -66,6 +67,25 @@ public record AttributeDto(
 				usersSubQuest.getAttribute2().getId(),
 				usersSubQuest.getAttribute2().getName(),
 				usersSubQuest.getExp2()
+			));
+		}
+		return attributeDtos;
+	}
+
+	public static List<AttributeDto> fromUsersMainQuest(UsersMainQuest usersMainQuest){
+		List<AttributeDto> attributeDtos = new ArrayList<>();
+
+		attributeDtos.add(new AttributeDto(
+			usersMainQuest.getAttribute1().getId(),
+			usersMainQuest.getAttribute1().getName(),
+			usersMainQuest.getExp1()
+		));
+
+		if (usersMainQuest.getAttribute2() != null) {
+			attributeDtos.add(new AttributeDto(
+				usersMainQuest.getAttribute2().getId(),
+				usersMainQuest.getAttribute2().getName(),
+				usersMainQuest.getExp2()
 			));
 		}
 		return attributeDtos;
