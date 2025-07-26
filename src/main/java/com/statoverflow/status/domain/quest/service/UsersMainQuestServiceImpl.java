@@ -1,0 +1,151 @@
+package com.statoverflow.status.domain.quest.service;
+
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.statoverflow.status.domain.master.entity.MainQuest;
+import com.statoverflow.status.domain.master.entity.MainSubQuest;
+import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
+import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.UsersMainQuestResponseDto;
+import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
+import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
+import com.statoverflow.status.domain.quest.enums.QuestStatus;
+import com.statoverflow.status.domain.quest.repository.MainQuestRepository;
+import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
+import com.statoverflow.status.domain.quest.repository.UsersMainQuestRepository;
+import com.statoverflow.status.domain.quest.repository.UsersSubQuestRepository;
+import com.statoverflow.status.domain.quest.service.interfaces.UsersMainQuestService;
+import com.statoverflow.status.domain.users.entity.Users;
+import com.statoverflow.status.domain.users.repository.UsersRepository;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class UsersMainQuestServiceImpl implements UsersMainQuestService {
+
+	private final MainQuestRepository mainQuestRepository;
+	private final UsersRepository usersRepository;
+	private final UsersMainQuestRepository usersMainQuestRepository;
+	private final UsersSubQuestRepository usersSubQuestRepository;
+	private final MainSubQuestRepository mainSubQuestRepository;
+
+	@Override
+	public CreateQuestResponseDto create(CreateQuestRequestDto dto, Long userId) {
+
+		MainQuest mainQuest = mainQuestRepository.findById(dto.mainQuest()).orElseThrow();
+		Users user = usersRepository.findById(userId).orElseThrow();
+
+		// 1. user main quest 내 등록
+		UsersMainQuest umq = UsersMainQuest.builder()
+			.mainQuest(mainQuest)
+			.users(user)
+			.startDate(dto.startDate())
+			.endDate(dto.endDate())
+			.build();
+
+		usersMainQuestRepository.save(umq);
+
+		// 2. user sub quest 내 등록
+		List<UsersSubQuest> createdUsersSubQuests = new ArrayList<>();
+		dto.subQuests().stream()
+			.forEach(subQuestInfo -> {
+				MainSubQuest mainSubQuest = mainSubQuestRepository.findByMainQuestIdAndSubQuestId(mainQuest.getId(), subQuestInfo.id());
+				UsersSubQuest.UsersSubQuestBuilder usersSubQuestBuilder = UsersSubQuest.builder()
+					.users(user)
+					.mainQuest(umq)
+					.subQuest(mainSubQuest.getSubQuest())
+					.frequencyType(subQuestInfo.frequencyType())
+					.actionUnitNum(subQuestInfo.actionUnitNum())
+					.attribute1(mainSubQuest.getAttribute1())
+					.exp1(mainSubQuest.getExp1());
+
+				if (mainSubQuest.getAttribute2() != null) {
+					usersSubQuestBuilder.attribute2(mainSubQuest.getAttribute2());
+					usersSubQuestBuilder.exp2(mainSubQuest.getExp2());
+				}
+
+				// todo : 서브 퀘스트 횟수 별 경험치 차등 지급
+
+				UsersSubQuest usersSubQuest = usersSubQuestBuilder.build();
+				UsersSubQuest savedUsersSubQuest = usersSubQuestRepository.save(usersSubQuest);
+				createdUsersSubQuests.add(savedUsersSubQuest);
+			});
+
+
+		List<AttributeDto> mainQuestAttributes = AttributeDto.fromMainEntity(mainQuest);
+
+
+		// SubQuestResponseDto 리스트 생성
+		List<SubQuestResponseDto> subQuestResponseDtos = createdUsersSubQuests.stream()
+			.map(usq -> {
+				List<AttributeDto> subQuestAttributes = AttributeDto.fromUsersEntity(usq);
+
+				return new SubQuestResponseDto(
+					usq.getId(),
+					usq.getFrequencyType(),
+					usq.getActionUnitType().getUnit(),
+					usq.getActionUnitNum(),
+					subQuestAttributes,
+					usq.getDescription()
+				);
+			})
+			.collect(Collectors.toList());
+
+		long totalDaysBetween = ChronoUnit.DAYS.between(dto.startDate(), dto.endDate());
+		int totalWeeks = (int) Math.ceil((double) totalDaysBetween / 7.0);
+
+		return new CreateQuestResponseDto(
+			umq.getId(),
+			umq.getStartDate(),
+			umq.getEndDate(),
+			totalWeeks,
+			umq.getTitle(),
+			mainQuestAttributes,
+			subQuestResponseDtos
+		);
+	}
+
+
+	@Override
+	public void deleteMainQuest(Long mainQuestId) {
+		UsersMainQuest umq = usersMainQuestRepository.findById(mainQuestId).orElseThrow();
+		umq.setStatus(QuestStatus.DELETED);
+		List<UsersSubQuest> usq = umq.getUsersSubQuests();
+		usq.stream()
+			.forEach(subQuestInfo -> {
+				subQuestInfo.setStatus(QuestStatus.DELETED);
+			});
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<UsersMainQuestResponseDto> getUsersMainQuests(Long userId) {
+		List<UsersMainQuest> umq = usersMainQuestRepository.findByUsersIdAndStatus(userId, QuestStatus.ACTIVE);
+		// umq.stream()
+		// 	.map()
+		return List.of();
+	}
+
+	private UsersMainQuestResponseDto mapToDto(UsersMainQuest umq) {
+		UsersMainQuestResponseDto umqrd = new UsersMainQuestResponseDto(
+			umq.getId(),
+			umq.getStartDate(),
+			umq.getEndDate(),
+			0,
+			umq.getTitle(),
+			null,
+			0
+		);
+		return umqrd;
+	}
+}
