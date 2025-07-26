@@ -27,7 +27,9 @@ import com.statoverflow.status.domain.users.entity.Users;
 import com.statoverflow.status.domain.users.repository.UsersRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -82,13 +84,13 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 			});
 
 
-		List<AttributeDto> mainQuestAttributes = AttributeDto.fromMainEntity(mainQuest);
+		List<AttributeDto> mainQuestAttributes = AttributeDto.fromMainQuest(mainQuest);
 
 
 		// SubQuestResponseDto 리스트 생성
 		List<SubQuestResponseDto> subQuestResponseDtos = createdUsersSubQuests.stream()
 			.map(usq -> {
-				List<AttributeDto> subQuestAttributes = AttributeDto.fromUsersEntity(usq);
+				List<AttributeDto> subQuestAttributes = AttributeDto.fromUsersSubQuest(usq);
 
 				return new SubQuestResponseDto(
 					usq.getId(),
@@ -131,21 +133,25 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	@Transactional(readOnly = true)
 	public List<UsersMainQuestResponseDto> getUsersMainQuests(Long userId) {
 		List<UsersMainQuest> umq = usersMainQuestRepository.findByUsersIdAndStatus(userId, QuestStatus.ACTIVE);
-		// umq.stream()
-		// 	.map()
-		return List.of();
+
+		return umq.stream()
+			.map(this::mapToDto)
+			.collect(Collectors.toList());
 	}
 
 	private UsersMainQuestResponseDto mapToDto(UsersMainQuest umq) {
+
+		log.info("totalWeeks 계산: {}", (ChronoUnit.DAYS.between(umq.getStartDate(), umq.getEndDate())+1));
 		UsersMainQuestResponseDto umqrd = new UsersMainQuestResponseDto(
 			umq.getId(),
 			umq.getStartDate(),
 			umq.getEndDate(),
-			0,
+			(int) (ChronoUnit.DAYS.between(umq.getStartDate(), umq.getEndDate())+1)/7,
 			umq.getTitle(),
-			null,
-			0
+			AttributeDto.fromUsersMainQuest(umq),
+			0 // todo: progress 계산
 		);
 		return umqrd;
 	}
+
 }
