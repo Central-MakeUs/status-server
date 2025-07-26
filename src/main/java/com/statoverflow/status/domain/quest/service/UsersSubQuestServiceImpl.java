@@ -34,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
-	private final UsersMainQuestRepository usersMainQuestRepository;
 	private final UsersSubQuestRepository usersSubQuestRepository;
 	private final UsersSubQuestLogRepository usersSubQuestLogRepository;
 
@@ -68,10 +67,10 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		// todo: mainQuestId에 대한 검증 작업 (예: usersMainQuestRepository를 통해 해당 mainQuestId가 userId에 속하는지 확인)
 
 		// 1. 메인 퀘스트 내 활성/주간 완료 상태의 서브 퀘스트 리스트를 가져옵니다.
-		// findByUsersId...는 findByUsers_Id...로 변경하는 것이 더 명확합니다.
 		List<UsersSubQuest> subQuestList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(
 			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.WEEKLY_COMPLETED));
 
+		log.debug("조회된 subQuestList: {}", subQuestList);
 		// 2. 각 서브 퀘스트에 대한 모든 로그를 가져옵니다.
 		// 성능 최적화를 위해, 특정 기간 내의 로그만 가져오거나,
 		// subQuestList의 ID를 모아서 UsersSubQuestLogRepository에서 IN 쿼리로 한 번에 가져오는 것을 고려해볼 수 있습니다.
@@ -81,10 +80,12 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		subQuestList.forEach(subQuest -> {
 			// 이 findByUsersSubQuest 메서드가 UsersSubQuestLogRepository에 정의되어 있어야 합니다.
 			// 또는 findByUsersSubQuestId(subQuest.getId()) 사용.
-			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuest(subQuest);
+			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(subQuest.getId());
+			log.debug("logs: {}, logs.size(): {}", logs, logs.size());
 			allLogs.addAll(logs);
 		});
 
+		log.debug("allLogs: {}, allLogs.size(): {}", allLogs, allLogs.size());
 
 		// 3. logsList를 로그 기록 날짜(LocalDate)별로 그룹화합니다.
 		Map<LocalDate, List<UsersSubQuestLog>> groupedLogs = allLogs.stream()
@@ -139,7 +140,19 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 			.memo(dto.memo())
 			.build();
 
+		usersSubQuestLogRepository.save(usql);
+
+		// todo: 경험치 올려주는 로직
+
 		return AttributeDto.fromUsersSubQuest(usq);
+	}
+
+	@Override
+	public SubQuestLogDto editSubQuest(Long userId, SubQuestLogDto dto) {
+		UsersSubQuestLog usql = usersSubQuestLogRepository.findById(dto.id()).orElseThrow();
+		if(dto.difficulty() != null) usql.setDifficulty(dto.difficulty());
+		if(dto.memo() != null) usql.setMemo(dto.memo());
+		return new SubQuestLogDto(usql.getId(), usql.getDifficulty(), usql.getMemo());
 	}
 
 	private SubQuestResponseDto.UsersSubQuestResponseDto mapToUsersSubQuestResponseDto(UsersSubQuest usersSubQuest) {
