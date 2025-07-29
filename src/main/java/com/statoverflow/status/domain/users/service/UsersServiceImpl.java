@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.users.service;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,9 @@ public class UsersServiceImpl implements UsersService{
 	private final UsersAttributeProgressRepository	usersAttributeProgressRepository;
 	private final AttributeRepository attributeRepository;
 
+	private final String VALID_CHARACTERS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+	private final int TAG_LENGTH = 4;
+
 	@Override
 	public SocialLoginReturnDto getUsersByProvider(OAuthProviderDto provider) {
 		return usersRepository.findByProviderTypeAndProviderId(
@@ -45,16 +49,20 @@ public class UsersServiceImpl implements UsersService{
 	@Override
 	public BasicUsersDto signUp(SignUpRequestDto req) {
 
-		log.info("회원가입 시작");
-		// todo: 랜덤 tag 설정
+		log.debug("회원가입 시작, req: {}", req);
 		Users user = req.toEntity();
 
-		usersRepository.save(user); // 2. Users 엔티티 저장
+		// 닉네임에 고유  Tag 생성
+		String tag = generateTagForNickname(req.nickname());
+		log.debug("닉네임에 따른 랜덤 Tag 생성: {}", tag);
+		user.setTag(tag);
+
+		usersRepository.save(user);
 
 		// 모든 마스터 Attribute에 대해 초기 UsersAttributeProgress 생성 및 저장
 		initializeUserAttributes(user);
 
-		log.info("회원가입 완료: {}", user.getId());
+		log.debug("회원가입 완료: {}", user.getId());
 		return BasicUsersDto.from(user);
 	}
 
@@ -66,9 +74,10 @@ public class UsersServiceImpl implements UsersService{
 		if(user.getNickname() != null && user.getNickname().equals(nickname)) {
 			throw new CustomException(ErrorType.NICKNAME_NOT_CHANGED);
 		}
+
+		user.setTag(generateTagForNickname(nickname));
 		user.setNickname(nickname);
-		
-		// todo: tag 바꾸는 작업 실행
+
 	}
 
 	@Override
@@ -91,5 +100,28 @@ public class UsersServiceImpl implements UsersService{
 				.collect(Collectors.toList());
 
 		usersAttributeProgressRepository.saveAll(initialProgresses);
+	}
+
+	private String generateTagForNickname(String nickname) {
+		String generatedTag;
+		boolean isDuplicate;
+		SecureRandom random = new SecureRandom(); // 보안적으로 강력한 난수 생성기
+
+		// 가능한 문자: 0-9 (숫자), A-Z (대문자), a-z (소문자)
+		int charactersLength = VALID_CHARACTERS.length();
+
+		// 무작위로 태그를 생성하고 중복을 확인
+		do {
+			StringBuilder tagBuilder = new StringBuilder();
+			for (int i = 0; i < TAG_LENGTH; i++) {
+				tagBuilder.append(VALID_CHARACTERS.charAt(random.nextInt(charactersLength)));
+			}
+			generatedTag = tagBuilder.toString();
+
+			isDuplicate = usersRepository.existsByNicknameAndTag(nickname, generatedTag);
+
+		} while (isDuplicate); // 중복이 발생하면 다시 생성
+
+		return generatedTag;
 	}
 }

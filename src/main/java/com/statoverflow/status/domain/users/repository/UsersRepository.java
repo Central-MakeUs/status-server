@@ -11,4 +11,6 @@ import com.statoverflow.status.domain.users.enums.ProviderType;
 @Repository
 public interface UsersRepository extends JpaRepository<Users, Long> {
 	Optional<Users> findByProviderTypeAndProviderId(ProviderType providerType, String providerId);
+
+	boolean existsByNicknameAndTag(String nickname, String generatedTag);
 }
