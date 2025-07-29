@@ -51,6 +51,10 @@ public class Users {
 	@Column(nullable = false)
 	private String providerId;
 
+	@Setter
+	@Column(nullable = true)
+	private String profileImage;
+
 	@CreatedDate
 	private LocalDateTime createdAt;
 
