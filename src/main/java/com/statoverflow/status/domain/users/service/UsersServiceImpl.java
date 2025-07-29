@@ -103,7 +103,7 @@ public class UsersServiceImpl implements UsersService{
 	}
 
 	@Override
-	public void updateNickname(Long userId, String nickname) {
+	public BasicUsersDto updateNickname(Long userId, String nickname) {
 		Users user = usersRepository.findById(userId)
 			.orElseThrow(() -> new CustomException(ErrorType.RESOURCE_NOT_FOUND));
 
@@ -114,6 +114,7 @@ public class UsersServiceImpl implements UsersService{
 		user.setTag(generateTagForNickname(nickname));
 		user.setNickname(nickname);
 
+		return BasicUsersDto.from(user);
 	}
 
 	@Override

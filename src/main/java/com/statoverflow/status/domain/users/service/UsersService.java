@@ -13,7 +13,7 @@ public interface UsersService {
 
 	BasicUsersDto signUp(SignUpRequestDto req);
 
-    void updateNickname(Long userId, String nickname);
+    BasicUsersDto updateNickname(Long userId, String nickname);
 
 	void deleteUser(Long id, HttpServletResponse response);
 }
