@@ -77,7 +77,7 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
             .httpOnly(true)
             .secure(true)
             .path("/")
-            .sameSite("Lax")
+            .sameSite("None")
             .maxAge(0)
             .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
