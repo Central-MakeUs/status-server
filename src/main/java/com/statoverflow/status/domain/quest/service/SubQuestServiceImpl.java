@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
@@ -16,6 +17,8 @@ import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.SubQuestService;
+import com.statoverflow.status.global.error.ErrorType;
+import com.statoverflow.status.global.exception.CustomException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +30,12 @@ public class SubQuestServiceImpl implements SubQuestService {
 
 	private final MainSubQuestRepository mainSubQuestRepository;
 	private final QuestUtil questUtil;
-	private final int REQUIRED_QUEST_CNT = 4;
+
+	@Value("${status.quest.subquest.output_subquest_num}")
+	private int OUTPUT_SUBQUEST_NUM;
+
+	@Value("${status.quest.subquest.select_subquest_num}")
+	private int SELECT_SUBQUEST_NUM;
 
 	@Override
 	public List<SubQuestResponseDto> getSubQuests(List<Integer> attributes, Long mainQuest, Long id) {
@@ -61,7 +69,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 		log.debug("변환된 서브 퀘스트 ID: {}", subQuestDtos.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
 
 		// 5. 리스트를 무작위로 섞고, 4개만 반환
-		List<SubQuestResponseDto> selectedMainQuests = questUtil.selectRandoms(subQuestDtos, REQUIRED_QUEST_CNT);
+		List<SubQuestResponseDto> selectedMainQuests = questUtil.selectRandoms(subQuestDtos, OUTPUT_SUBQUEST_NUM);
 		log.info("getSubQuests 메서드 완료. 최종 선택된 서브 퀘스트 개수: {}", selectedMainQuests.size());
 		log.info("최종 선택된 서브 퀘스트 ID: {}", selectedMainQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
 
@@ -72,7 +80,13 @@ public class SubQuestServiceImpl implements SubQuestService {
 	@Override
 	public List<SubQuestResponseDto> rerollSubQuestRequestDto(RerollSubQuestRequestDto dto, Long id) {
 
-		int reroll_required_quest_cnt = REQUIRED_QUEST_CNT - dto.selectedSubQuests().size();
+		// 선택한 서브 퀘스트 사이즈 체크
+		int select_subquests_cnt = dto.selectedSubQuests().size();
+		if(select_subquests_cnt >= OUTPUT_SUBQUEST_NUM) {
+			throw new CustomException(ErrorType.INVALID_SUBQUEST_SELECTED);
+		}
+
+		int reroll_required_quest_cnt = OUTPUT_SUBQUEST_NUM - select_subquests_cnt;
 
 		// 2. 유저가 선택한 attributes를 bitmask로 변경
 		int selectedAttributesBitmask = questUtil.calculateCombinedBitmask(dto.attributes());
