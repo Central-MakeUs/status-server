@@ -47,4 +47,9 @@ public class UsersController {
 		return ApiResponse.noContent();
 	}
 
+	@GetMapping("/me")
+	public ResponseEntity<ApiResponse<BasicUsersDto>> getUser(@CurrentUser BasicUsersDto users) {
+		return ApiResponse.ok(users);
+	}
+
 }
