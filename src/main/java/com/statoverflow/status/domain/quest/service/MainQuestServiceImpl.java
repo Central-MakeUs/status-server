@@ -10,8 +10,11 @@ import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.UsersMainQuestResponseDto;
+import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
 import com.statoverflow.status.domain.quest.repository.MainQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.MainQuestService;
+import com.statoverflow.status.domain.quest.service.interfaces.UsersMainQuestService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +26,7 @@ public class MainQuestServiceImpl implements MainQuestService {
 
 	private final MainQuestRepository mainQuestRepository;
 	private final QuestUtil questUtil;
+	private final UsersMainQuestService usersMainQuestService;
 
 	@Value("${status.quest.mainquest.output_mainquest_num}")
 	private int OUTPUT_MAINQUEST_NUM;
@@ -43,7 +47,14 @@ public class MainQuestServiceImpl implements MainQuestService {
 		log.debug("DB 조회 결과 (allCandidateMainQuests) ID: {}", allCandidateMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
 
 		// todo: 3. 진행중인 퀘스트 제외
-		List<MainQuest> availableMainQuests = allCandidateMainQuests;
+		Set<MainQuest> userMainQuestList = usersMainQuestService.getUsersMainQuestByUserId(userId)
+			.stream()
+			.map(UsersMainQuest::getMainQuest)
+			.collect(Collectors.toSet());
+
+		List<MainQuest> availableMainQuests = allCandidateMainQuests.stream()
+			.filter(mainQuest -> !userMainQuestList.contains(mainQuest))
+			.toList();
 		log.debug("진행중인 퀘스트 제외 후 MainQuest 개수: {}", availableMainQuests.size());
 		log.debug("진행중인 퀘스트 제외 후 MainQuest ID: {}", availableMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
 
@@ -82,9 +93,17 @@ public class MainQuestServiceImpl implements MainQuestService {
 		log.debug("rerollMainQuests: DB 조회 결과 (allCandidateMainQuests) ID: {}", allCandidateMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
 
 		// todo: 4. 진행중인 퀘스트 제외 - 기존 퀘스트 및 리롤 퀘스트 모두에 적용
-		List<MainQuest> currentAvailableMainQuests = allCandidateMainQuests; // 현재는 필터링 없음
-		log.debug("rerollMainQuests: 진행중인 퀘스트 제외 (미구현) 후 MainQuest 개수: {}", currentAvailableMainQuests.size());
-		log.debug("rerollMainQuests: 진행중인 퀘스트 제외 (미구현) 후 MainQuest ID: {}", currentAvailableMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
+		Set<MainQuest> userMainQuestList = usersMainQuestService.getUsersMainQuestByUserId(userId)
+			.stream()
+			.map(UsersMainQuest::getMainQuest)
+			.collect(Collectors.toSet());
+
+		List<MainQuest> currentAvailableMainQuests = allCandidateMainQuests.stream()
+			.filter(mainQuest -> !userMainQuestList.contains(mainQuest))
+			.toList();
+
+		log.debug("rerollMainQuests: 진행중인 퀘스트 제외 후 MainQuest 개수: {}", currentAvailableMainQuests.size());
+		log.debug("rerollMainQuests: 진행중인 퀘스트 제외 후 MainQuest ID: {}", currentAvailableMainQuests.stream().map(MainQuest::getId).collect(Collectors.toList()));
 
 
 		// 5. 제외할 퀘스트 ID를 기준으로 두 개의 리스트로 분리
