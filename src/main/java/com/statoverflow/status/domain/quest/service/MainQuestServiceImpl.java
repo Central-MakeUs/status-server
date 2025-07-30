@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.MainQuest;
@@ -21,8 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 public class MainQuestServiceImpl implements MainQuestService {
 
 	private final MainQuestRepository mainQuestRepository;
-	private final int REQUIRED_QUEST_CNT = 4;
 	private final QuestUtil questUtil;
+
+	@Value("${status.quest.mainquest.output_mainquest_num}")
+	private int OUTPUT_MAINQUEST_NUM;
 
 
 	@Override
@@ -53,7 +56,7 @@ public class MainQuestServiceImpl implements MainQuestService {
 		log.debug("변환된 메인 퀘스트 ID: {}", mainQuestDtos.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
 
 		// 5. 리스트를 무작위로 섞고, 4개만 반환
-		List<MainQuestResponseDto> selectedMainQuests = questUtil.selectRandoms(mainQuestDtos, 4);
+		List<MainQuestResponseDto> selectedMainQuests = questUtil.selectRandoms(mainQuestDtos, OUTPUT_MAINQUEST_NUM);
 		log.info("getMainQuests 메서드 완료. 최종 선택된 메인 퀘스트 개수: {}", selectedMainQuests.size());
 		log.info("최종 선택된 메인 퀘스트 ID: {}", selectedMainQuests.stream().map(MainQuestResponseDto::id).collect(Collectors.toList()));
 
@@ -105,11 +108,11 @@ public class MainQuestServiceImpl implements MainQuestService {
 
 		List<MainQuestResponseDto> finalSelectedMainQuests = new ArrayList<>();
 		// 6. 중복이 아닌 퀘스트 중 선택
-		finalSelectedMainQuests.addAll(questUtil.selectRandoms(nonExcludedMainQuests, Math.min(nonExcludedSize, REQUIRED_QUEST_CNT)));
+		finalSelectedMainQuests.addAll(questUtil.selectRandoms(nonExcludedMainQuests, Math.min(nonExcludedSize, OUTPUT_MAINQUEST_NUM)));
 
 		// 7. 제외된 퀘스트 중 선택
-		if(nonExcludedSize < REQUIRED_QUEST_CNT) {
-			finalSelectedMainQuests.addAll(questUtil.selectRandoms(excludedAndPotentiallyReusableMainQuests, REQUIRED_QUEST_CNT - nonExcludedSize));
+		if(nonExcludedSize < OUTPUT_MAINQUEST_NUM) {
+			finalSelectedMainQuests.addAll(questUtil.selectRandoms(excludedAndPotentiallyReusableMainQuests, OUTPUT_MAINQUEST_NUM - nonExcludedSize));
 		}
 
 		log.info("rerollMainQuests 메서드 완료. 최종 선택된 메인 퀘스트 개수: {}", finalSelectedMainQuests.size());

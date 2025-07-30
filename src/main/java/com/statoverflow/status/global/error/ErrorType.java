@@ -18,8 +18,10 @@ public enum ErrorType {
 
     NICKNAME_NOT_CHANGED(HttpStatus.CONFLICT, "02-001", "닉네임이 이전과 동일합니다."),
 
-    INVALID_ATTRIBUTES(HttpStatus.BAD_REQUEST, "03-001", "한 개나 두 개의 능력치를 선택해야 합니다.")
+    INVALID_ATTRIBUTES(HttpStatus.BAD_REQUEST, "03-001", "한 개나 두 개의 능력치를 선택해야 합니다."),
 
+    // 서브 퀘스트 에러
+    INVALID_SUBQUEST_SELECTED(HttpStatus.BAD_REQUEST, "05-001", "선택된 서브퀘스트의 갯수가 잘못되었습니다."),
 
     ;
 

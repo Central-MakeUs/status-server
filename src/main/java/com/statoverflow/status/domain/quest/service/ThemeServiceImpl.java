@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.QuestTheme;
@@ -19,7 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ThemeServiceImpl implements ThemeService {
 
-	private final int REQUIRED_THEME_CNT = 4;
+	@Value("${status.quest.theme.output_theme_num}")
+	private int OUTPUT_THEME_NUM;
+
 	private final QuestUtil questUtil;
 
 	@Override
@@ -38,7 +41,7 @@ public class ThemeServiceImpl implements ThemeService {
 		log.debug("변환된 테마 ID: {}", themeResponseDtos.stream().map(ThemeResponseDto::id).collect(Collectors.toList()));
 
 
-		List<ThemeResponseDto> selectedThemes = questUtil.selectRandoms(themeResponseDtos, REQUIRED_THEME_CNT);
+		List<ThemeResponseDto> selectedThemes = questUtil.selectRandoms(themeResponseDtos, OUTPUT_THEME_NUM);
 		log.info("getThemes 메서드 완료. 최종 선택된 테마 개수: {}", selectedThemes.size());
 		log.info("최종 선택된 테마 ID: {}", selectedThemes.stream().map(ThemeResponseDto::id).collect(Collectors.toList()));
 
@@ -79,11 +82,11 @@ public class ThemeServiceImpl implements ThemeService {
 		List<ThemeResponseDto> finalSelectedThemes = new ArrayList<>();
 		// 3. 중복이 아닌 테마를 먼저 무작위로 섞음
 		finalSelectedThemes.addAll(questUtil.selectRandoms(
-			nonExcludedThemes, Math.min(nonExcludedThemeCnt, REQUIRED_THEME_CNT)));
+			nonExcludedThemes, Math.min(nonExcludedThemeCnt, OUTPUT_THEME_NUM)));
 
-		if(nonExcludedThemeCnt<REQUIRED_THEME_CNT) {
+		if(nonExcludedThemeCnt< OUTPUT_THEME_NUM) {
 			finalSelectedThemes.addAll(questUtil.selectRandoms(excludedThemes,
-				REQUIRED_THEME_CNT-nonExcludedThemeCnt));
+				OUTPUT_THEME_NUM -nonExcludedThemeCnt));
 		}
 
 		log.info("rerollThemes 메서드 완료. 최종 선택된 테마 개수: {}", finalSelectedThemes.size());
