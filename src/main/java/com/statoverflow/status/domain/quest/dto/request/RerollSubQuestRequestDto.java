@@ -8,4 +8,9 @@ public record RerollSubQuestRequestDto(
 	List<Long> selectedSubQuests,
 	List<Long> gottenSubQuests
 ) {
+	public RerollSubQuestRequestDto {
+		selectedSubQuests = selectedSubQuests != null ? selectedSubQuests : List.of();
+		gottenSubQuests = gottenSubQuests != null ? gottenSubQuests : List.of();
+		attributes = attributes != null ? attributes : List.of();
+	}
 }

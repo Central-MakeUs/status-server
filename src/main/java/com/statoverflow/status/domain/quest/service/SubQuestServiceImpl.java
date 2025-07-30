@@ -17,6 +17,7 @@ import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.repository.MainSubQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.SubQuestService;
+import com.statoverflow.status.domain.quest.service.interfaces.UsersSubQuestService;
 import com.statoverflow.status.global.error.ErrorType;
 import com.statoverflow.status.global.exception.CustomException;
 
@@ -29,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SubQuestServiceImpl implements SubQuestService {
 
 	private final MainSubQuestRepository mainSubQuestRepository;
+	private final UsersSubQuestService usersSubQuestService;
 	private final QuestUtil questUtil;
 
 	@Value("${status.quest.subquest.output_subquest_num}")
@@ -38,151 +40,150 @@ public class SubQuestServiceImpl implements SubQuestService {
 	private int SELECT_SUBQUEST_NUM;
 
 	@Override
-	public List<SubQuestResponseDto> getSubQuests(List<Integer> attributes, Long mainQuest, Long id) {
+	public List<SubQuestResponseDto> getSubQuests(List<Integer> attributes, Long mainQuest, Long userId) {
+		log.info("getSubQuests 호출: mainQuest={}, userId={}, attributes={}", mainQuest, userId, attributes);
 
-		// todo: 1. 이미 진행 중인 서브 퀘스트 ID 목록 가져오기
+		// TODO: 1. 이미 진행 중인 서브 퀘스트 ID 목록 가져오기
+		List<SubQuestResponseDto> availableSubQuests = getAvailableSubQuests(attributes, mainQuest, userId);
 
-		// 2. 유저가 선택한 attributes를 bitmask로 변경
-		int selectedAttributesBitmask = questUtil.calculateCombinedBitmask(attributes);
-		log.debug("getSubQuests: 계산된 selectedAttributesBitmask: {}", selectedAttributesBitmask);
+		// 무작위로 섞고, 지정된 개수만 반환
+		List<SubQuestResponseDto> selectedSubQuests = questUtil.selectRandoms(availableSubQuests, OUTPUT_SUBQUEST_NUM);
 
+		log.info("getSubQuests 완료: 최종 선택된 서브 퀘스트 개수={}, ID={}",
+			selectedSubQuests.size(),
+			selectedSubQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
 
-		// 2. DB에서 서브 퀘스트 필터링 및 조회
-		List<MainSubQuest> subQuests =
-			mainSubQuestRepository.findAllByMainQuestIdAndAttributes(mainQuest, selectedAttributesBitmask);
-		log.debug("DB 조회 결과 (subQuests) 개수: {}", subQuests.size());
-		log.debug("DB 조회 결과 (subQuests) ID: {}", subQuests.stream().map(mainSubQuest
-			-> mainSubQuest.getSubQuest().getId()).collect(Collectors.toList()));
-
-		// todo: 3. 진행중인 퀘스트 제외
-		List<MainSubQuest> availableSubQuests = subQuests;
-		log.debug("진행중인 퀘스트 제외 후 MainSubQuest 개수: {}", availableSubQuests.size());
-		log.debug("진행중인 퀘스트 제외 후 MainSubQuest ID: {}", availableSubQuests.stream().map(mainSubQuest
-			-> mainSubQuest.getSubQuest().getId()).collect(Collectors.toList()));
-
-
-		// 4. MainSubQuest 엔티티를 SubQuestResponseDto로 변환
-		List<SubQuestResponseDto> subQuestDtos = availableSubQuests.stream()
-			.map(this::mapToDto)
-			.collect(Collectors.toList());
-		log.debug("SubQuestResponseDto 변환 완료. 변환된 서브 퀘스트 개수: {}", subQuestDtos.size());
-		log.debug("변환된 서브 퀘스트 ID: {}", subQuestDtos.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
-
-		// 5. 리스트를 무작위로 섞고, 4개만 반환
-		List<SubQuestResponseDto> selectedMainQuests = questUtil.selectRandoms(subQuestDtos, OUTPUT_SUBQUEST_NUM);
-		log.info("getSubQuests 메서드 완료. 최종 선택된 서브 퀘스트 개수: {}", selectedMainQuests.size());
-		log.info("최종 선택된 서브 퀘스트 ID: {}", selectedMainQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
-
-		return selectedMainQuests;
-
+		return selectedSubQuests;
 	}
 
 	@Override
-	public List<SubQuestResponseDto> rerollSubQuestRequestDto(RerollSubQuestRequestDto dto, Long id) {
+	public List<SubQuestResponseDto> rerollSubQuestRequestDto(RerollSubQuestRequestDto dto, Long userId) {
+		log.info("rerollSubQuests 호출: userId={}, selectedCount={}", userId, dto.selectedSubQuests().size());
 
-		// 선택한 서브 퀘스트 사이즈 체크
-		int select_subquests_cnt = dto.selectedSubQuests().size();
-		if(select_subquests_cnt >= OUTPUT_SUBQUEST_NUM) {
-			throw new CustomException(ErrorType.INVALID_SUBQUEST_SELECTED);
-		}
+		validateRerollRequest(dto);
 
-		int reroll_required_quest_cnt = OUTPUT_SUBQUEST_NUM - select_subquests_cnt;
+		int rerollRequiredCount = OUTPUT_SUBQUEST_NUM - dto.selectedSubQuests().size();
+		List<SubQuestResponseDto> availableSubQuests = getAvailableSubQuests(dto.attributes(), dto.mainQuest(), userId);
 
-		// 2. 유저가 선택한 attributes를 bitmask로 변경
-		int selectedAttributesBitmask = questUtil.calculateCombinedBitmask(dto.attributes());
-		log.debug("getSubQuests: 계산된 selectedAttributesBitmask: {}", selectedAttributesBitmask);
+		// 선택된 퀘스트 제외
+		List<SubQuestResponseDto> candidateSubQuests = excludeSelectedSubQuests(availableSubQuests, dto.selectedSubQuests());
 
-		// 2. DB에서 서브 퀘스트 필터링 및 조회
-		List<MainSubQuest> subQuests =
-			mainSubQuestRepository.findAllByMainQuestIdAndAttributes(dto.mainQuest(), selectedAttributesBitmask);
-		log.debug("DB 조회 결과 (subQuests) 개수: {}", subQuests.size());
-		log.debug("DB 조회 결과 (subQuests) ID: {}", subQuests.stream().map(mainSubQuest
-			-> mainSubQuest.getSubQuest().getId()).collect(Collectors.toList()));
+		// 우선순위에 따라 퀘스트 선택
+		List<SubQuestResponseDto> finalSelectedSubQuests = selectQuestsWithPriority(
+			candidateSubQuests, dto.gottenSubQuests(), rerollRequiredCount);
 
-		// todo: 3. 진행중인 퀘스트 제외
+		log.info("rerollSubQuests 완료: 최종 선택된 서브 퀘스트 개수={}, ID={}",
+			finalSelectedSubQuests.size(),
+			finalSelectedSubQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
+
+		return finalSelectedSubQuests;
+	}
+
+	/**
+	 * 사용 가능한 서브 퀘스트 목록을 조회하고 DTO로 변환
+	 */
+	private List<SubQuestResponseDto> getAvailableSubQuests(List<Integer> attributes, Long mainQuest, Long userId) {
+		// 속성을 비트마스크로 변환
+		int selectedAttributesBitmask = questUtil.calculateCombinedBitmask(attributes);
+		log.debug("계산된 selectedAttributesBitmask: {}", selectedAttributesBitmask);
+
+		// DB에서 서브 퀘스트 조회
+		List<MainSubQuest> subQuests = mainSubQuestRepository.findAllByMainQuestIdAndAttributes(mainQuest, selectedAttributesBitmask);
+		log.debug("DB 조회 결과 개수: {}, ID: {}",
+			subQuests.size(),
+			subQuests.stream().map(mq -> mq.getSubQuest().getId()).collect(Collectors.toList()));
+
+		// TODO: 진행중인 퀘스트 제외 로직 구현
 		List<MainSubQuest> availableSubQuests = subQuests;
-		// log.debug("진행중인 퀘스트 제외 후 MainSubQuest 개수: {}", availableSubQuests.size());
-		// log.debug("진행중인 퀘스트 제외 후 MainSubQuest ID: {}", availableSubQuests.stream().map(mainSubQuest
-		// 	-> mainSubQuest.getSubQuest().getId()).collect(Collectors.toList()));
+		log.debug("진행중인 퀘스트 제외 후 개수: {}", availableSubQuests.size());
 
-		// 4. MainSubQuest 엔티티를 SubQuestResponseDto로 변환
+		// DTO로 변환
 		List<SubQuestResponseDto> subQuestDtos = availableSubQuests.stream()
 			.map(this::mapToDto)
 			.collect(Collectors.toList());
-		log.debug("SubQuestResponseDto 변환 완료. 변환된 서브 퀘스트 개수: {}", subQuestDtos.size());
-		log.debug("변환된 서브 퀘스트 ID: {}", subQuestDtos.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
 
-		// 5. selectedSubQuests 제외
-		Set<Long> excludeIds = new HashSet<>();
-
-		if (dto.selectedSubQuests() != null) {
-			excludeIds.addAll(dto.selectedSubQuests()); // selectedSubQuests는 항상 제외
-		}
-
-		List<SubQuestResponseDto> primaryRandomPool = subQuestDtos.stream()
-			.filter(sqDto -> !excludeIds.contains(sqDto.id())) // selectedSubQuests 제외
-			.collect(Collectors.toList());
-		log.debug("Primary 랜덤 풀 (selected & gotten 제외) 개수: {}", primaryRandomPool.size());
-		log.debug("Primary 랜덤 풀 ID: {}", primaryRandomPool.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
-
-
-		// 6. gottenSubQuests , 제외한 List 출력
-		Set<Long> gottenSubQuestIds = dto.gottenSubQuests().stream().collect(Collectors.toSet());
-
-		// 5. 제외할 퀘스트 ID를 기준으로 두 개의 리스트로 분리
-		List<SubQuestResponseDto> nonExcludedSubQuests = primaryRandomPool.stream()
-			.filter(subQuest -> !gottenSubQuestIds.contains(subQuest.id()))
-			.collect(Collectors.toList());
-		int nonExcludedSize = nonExcludedSubQuests.size();
-		log.debug("rerollSubQuests: 제외되지 않은 서브 퀘스트 개수: {}", nonExcludedSubQuests.size());
-		log.debug("rerollSubQuests: 제외되지 않은 서브 퀘스트 ID: {}", nonExcludedSubQuests.stream().collect(Collectors.toList()));
-
-		List<SubQuestResponseDto> excludedAndPotentiallyReusableSubQuests = primaryRandomPool.stream()
-			.filter(subQuest -> gottenSubQuestIds.contains(subQuest.id()))
-			.collect(Collectors.toList());
-		int excludedSize = excludedAndPotentiallyReusableSubQuests.size();
-		log.debug("rerollSubQuests: 제외된 (재사용 가능성 있는) 서브 퀘스트 개수: {}", excludedAndPotentiallyReusableSubQuests.size());
-		log.debug("rerollSubQuests: 제외된 (재사용 가능성 있는) 서브 퀘스트 ID: {}", excludedAndPotentiallyReusableSubQuests
-			.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
-
-		List<SubQuestResponseDto> finalSelectedSubQuests = new ArrayList<>();
-		// 6. 중복이 아닌 퀘스트 중 선택
-		finalSelectedSubQuests.addAll(questUtil.selectRandoms(nonExcludedSubQuests,
-			Math.min(nonExcludedSize, reroll_required_quest_cnt)));
-
-		// 7. 제외된 퀘스트 중 선택
-		if(nonExcludedSize < reroll_required_quest_cnt) {
-			finalSelectedSubQuests.addAll(questUtil.selectRandoms(excludedAndPotentiallyReusableSubQuests,
-				reroll_required_quest_cnt - nonExcludedSize));
-		}
-
-		log.info("rerollMainQuests 메서드 완료. 최종 선택된 메인 퀘스트 개수: {}", finalSelectedSubQuests.size());
-		log.info("최종 선택된 메인 퀘스트 ID: {}", finalSelectedSubQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
-
-		return finalSelectedSubQuests;
-
+		log.debug("DTO 변환 완료: 개수={}", subQuestDtos.size());
+		return subQuestDtos;
 	}
 
+	/**
+	 * Reroll 요청 유효성 검증
+	 */
+	private void validateRerollRequest(RerollSubQuestRequestDto dto) {
+		int selectedCount = dto.selectedSubQuests().size();
+		if (selectedCount >= OUTPUT_SUBQUEST_NUM) {
+			log.warn("잘못된 reroll 요청: 선택된 퀘스트 수가 출력 개수 이상 ({}>={})", selectedCount, OUTPUT_SUBQUEST_NUM);
+			throw new CustomException(ErrorType.INVALID_SUBQUEST_SELECTED);
+		}
+	}
 
-	// MainSubQuest 엔티티와 SubQuest 엔티티를 조합하여 SubQuestResponseDto로 변환하는 헬퍼 메서드
+	/**
+	 * 선택된 서브 퀘스트를 제외한 후보 목록 반환
+	 */
+	private List<SubQuestResponseDto> excludeSelectedSubQuests(List<SubQuestResponseDto> allSubQuests, List<Long> selectedSubQuests) {
+		Set<Long> excludeIds = new HashSet<>(selectedSubQuests);
+
+		List<SubQuestResponseDto> candidates = allSubQuests.stream()
+			.filter(quest -> !excludeIds.contains(quest.id()))
+			.collect(Collectors.toList());
+
+		log.debug("선택된 퀘스트 제외 후 후보 개수: {}", candidates.size());
+		return candidates;
+	}
+
+	/**
+	 * 우선순위에 따라 퀘스트 선택 (이전에 받지 않은 퀘스트 우선, 부족하면 받은 퀘스트에서 선택)
+	 */
+	private List<SubQuestResponseDto> selectQuestsWithPriority(
+		List<SubQuestResponseDto> candidates, List<Long> gottenSubQuests, int requiredCount) {
+
+		Set<Long> gottenIds = new HashSet<>(gottenSubQuests);
+
+		// 우선순위 그룹 분리
+		List<SubQuestResponseDto> newQuests = candidates.stream()
+			.filter(quest -> !gottenIds.contains(quest.id()))
+			.collect(Collectors.toList());
+
+		List<SubQuestResponseDto> reusableQuests = candidates.stream()
+			.filter(quest -> gottenIds.contains(quest.id()))
+			.collect(Collectors.toList());
+
+		log.debug("새로운 퀘스트 개수: {}, 재사용 가능한 퀘스트 개수: {}", newQuests.size(), reusableQuests.size());
+
+		List<SubQuestResponseDto> finalSelected = new ArrayList<>();
+
+		// 새로운 퀘스트 우선 선택
+		int newQuestCount = Math.min(newQuests.size(), requiredCount);
+		finalSelected.addAll(questUtil.selectRandoms(newQuests, newQuestCount));
+
+		// 부족한 만큼 재사용 퀘스트에서 선택
+		int remainingCount = requiredCount - newQuestCount;
+		if (remainingCount > 0) {
+			finalSelected.addAll(questUtil.selectRandoms(reusableQuests, remainingCount));
+		}
+
+		return finalSelected;
+	}
+
+	/**
+	 * MainSubQuest 엔티티를 SubQuestResponseDto로 변환
+	 */
 	private SubQuestResponseDto mapToDto(MainSubQuest mainSubQuest) {
 		SubQuest subQuest = mainSubQuest.getSubQuest();
 
-		// 1. attributes 필드 생성 (AttributeDto.fromMainSubQuest 사용)
+		// 속성 정보 생성
 		List<AttributeDto> attributes = AttributeDto.fromMainSubQuest(mainSubQuest);
 
-		// 2. frequencyType 생성 (랜덤으로 선택)
+		// 랜덤 빈도 타입 선택
 		FrequencyType frequencyType = FrequencyType.getRandomFrequencyType();
 
-		// 3. actionUnitType 및 actionUnitNum 가져오기
+		// 액션 단위 정보 추출
 		String actionUnitTypeUnit = subQuest.getActionUnitType().getUnit();
 		int actionUnitNumValue = subQuest.getActionUnitType().getDefaultCount();
 
-		// 4. desc 필드 생성 (플레이스홀더 채우기)
-		String rawName = subQuest.getName(); // 예: "기상 후 {0:d}분 동안 스마트폰 알림 확인 안 하기"
-		log.info("rawName: {}", rawName);
-		String formattedDesc = String.format(rawName, actionUnitNumValue);
-
+		// 설명 필드 생성 (플레이스홀더 치환)
+		String formattedDesc = String.format(subQuest.getName(), actionUnitNumValue);
+		log.debug("퀘스트 설명 변환: '{}' -> '{}'", subQuest.getName(), formattedDesc);
 
 		return new SubQuestResponseDto(
 			subQuest.getId(),
