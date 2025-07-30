@@ -132,11 +132,16 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UsersMainQuestResponseDto> getUsersMainQuests(Long userId) {
-		List<UsersMainQuest> umq = usersMainQuestRepository.findByUsersIdAndStatus(userId, QuestStatus.ACTIVE);
 
-		return umq.stream()
+		return getUsersMainQuestByUserId(userId).stream()
 			.map(this::mapToDto)
 			.collect(Collectors.toList());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<UsersMainQuest> getUsersMainQuestByUserId(Long userId) {
+		return usersMainQuestRepository.findByUsersIdAndStatus(userId, QuestStatus.ACTIVE);
 	}
 
 	private UsersMainQuestResponseDto mapToDto(UsersMainQuest umq) {
