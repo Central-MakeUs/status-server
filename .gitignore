@@ -8,6 +8,7 @@ build/
 *.env
 *.json
 *.yml
+*.p8
 
 ### STS ###
 .apt_generated
