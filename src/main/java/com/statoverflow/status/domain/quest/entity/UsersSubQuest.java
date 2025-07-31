@@ -60,7 +60,7 @@ public class UsersSubQuest {
 	@JoinColumn(name = "main_quest_id", nullable = false)
 	private UsersMainQuest mainQuest;
 
-	@OneToOne
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "sub_quest_id", nullable = false)
 	private SubQuest subQuest;
 

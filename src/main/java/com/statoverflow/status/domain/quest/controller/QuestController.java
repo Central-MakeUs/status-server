@@ -32,6 +32,7 @@ import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.global.annotation.CurrentUser;
 import com.statoverflow.status.global.response.ApiResponse;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -101,7 +102,7 @@ public class QuestController {
 
 	@PostMapping("/create")
 	public ResponseEntity<ApiResponse<CreateQuestResponseDto>> createQuest(@CurrentUser BasicUsersDto user,
-		@RequestBody CreateQuestRequestDto dto) {
+		@Valid  @RequestBody CreateQuestRequestDto dto) {
 		return ApiResponse.ok(usersMainQuestService.create(dto, user.id()));
 
 	}

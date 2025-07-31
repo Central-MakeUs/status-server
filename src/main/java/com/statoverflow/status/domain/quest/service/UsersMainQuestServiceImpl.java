@@ -93,6 +93,8 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 		List<SubQuestResponseDto> subQuestResponseDtos = createdUsersSubQuests.stream()
 			.map(usq -> {
 				List<AttributeDto> subQuestAttributes = AttributeDto.fromUsersSubQuest(usq);
+				// 설명 필드 생성 (플레이스홀더 치환)
+				String formattedDesc = String.format(usq.getDescription(), usq.getActionUnitNum());
 
 				return new SubQuestResponseDto(
 					usq.getId(),
@@ -100,7 +102,7 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 					usq.getActionUnitType().getUnit(),
 					usq.getActionUnitNum(),
 					subQuestAttributes,
-					usq.getDescription()
+					formattedDesc
 				);
 			})
 			.collect(Collectors.toList());
