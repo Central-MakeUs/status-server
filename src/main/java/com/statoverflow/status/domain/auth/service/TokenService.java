@@ -1,14 +1,19 @@
 package com.statoverflow.status.domain.auth.service;
 
+import java.security.PublicKey;
 import java.time.Duration;
+import java.util.Base64;
+import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
+import com.google.gson.Gson;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.global.jwt.JwtService;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -19,12 +19,7 @@ import lombok.AllArgsConstructor;
 @Service
 public class OAuthServiceImpl implements OAuthService{
 
-    private final GoogleOAuthClient googleClient;
-    private final KakaoOAuthClient kakaoClient;
-
     private final List<AuthCodeProcessor> authCodeProcessors;
-
-
 
     @Override
     public OAuthProviderDto getProviderId(OAuthLoginRequestDto dto) {
