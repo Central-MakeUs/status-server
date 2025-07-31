@@ -21,12 +21,13 @@ jobs:
           distribution: 'temurin'
           java-version: '17.0.13'
       
-      # 3. application.yml 추가
-      - name: add application.yml
+      # 3. application.yml 및 apple authkey 추가
+      - name: add secrets
         run: |
           chmod -R 777 src/main
           mkdir -p src/main/resources
           echo "${{ secrets.APPLICATION_YML }}" > src/main/resources/application.yml
+          echo "${{ secrets.APPLE_AUTHKEY }}" > src/main/resources/Apple_AuthKey.p8
       
       # 4. Spring Boot 애플리케이션 빌드
       - name: Build Spring Boot Application
