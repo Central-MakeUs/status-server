@@ -48,7 +48,7 @@ public class TokenService {
 			.path("/")
 			.sameSite("None")
 			.maxAge(Duration.ofSeconds(maxAge))
-			.domain("status-front-rho.vercel.app")
+			.domain(".statoverflow.cloud")
 			.build();
 	}
 }
