@@ -68,15 +68,17 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 					.subQuest(mainSubQuest.getSubQuest())
 					.frequencyType(subQuestInfo.frequencyType())
 					.actionUnitNum(subQuestInfo.actionUnitNum())
-					.attribute1(mainSubQuest.getAttribute1())
-					.exp1(mainSubQuest.getExp1());
+					.attribute1(mainSubQuest.getAttribute1());
+
+				double multiplier = mainSubQuest.getSubQuest().getActionUnitType().getExpMultiplier(subQuestInfo.actionUnitNum()).orElseThrow();
+
+
+					usersSubQuestBuilder.exp1((int)(mainSubQuest.getExp1()*multiplier));
 
 				if (mainSubQuest.getAttribute2() != null) {
 					usersSubQuestBuilder.attribute2(mainSubQuest.getAttribute2());
-					usersSubQuestBuilder.exp2(mainSubQuest.getExp2());
+					usersSubQuestBuilder.exp2((int)(mainSubQuest.getExp2()*multiplier));
 				}
-
-				// todo : 서브 퀘스트 횟수 별 경험치 차등 지급
 
 				UsersSubQuest usersSubQuest = usersSubQuestBuilder.build();
 				UsersSubQuest savedUsersSubQuest = usersSubQuestRepository.save(usersSubQuest);
