@@ -48,6 +48,7 @@ public class TokenService {
 			.path("/")
 			.sameSite("None")
 			.maxAge(Duration.ofSeconds(maxAge))
+			.domain("status-front-rho.vercel.app")
 			.build();
 	}
 }
