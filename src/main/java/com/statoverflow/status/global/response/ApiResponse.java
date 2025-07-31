@@ -70,4 +70,15 @@ public class ApiResponse<T> {
                         .build());
     }
 
+
+    // 에러 응답 생성 메서드
+    public static ResponseEntity<ApiResponse<Void>> error(ErrorType errorType, String msg) {
+        return ResponseEntity.status(errorType.getStatus())
+            .body(ApiResponse.<Void>builder()
+                .status(errorType.getStatus().value())
+                .code(errorType.getErrorCode())
+                .message(errorType.getMessage()+msg)
+                .build());
+    }
+
 }
