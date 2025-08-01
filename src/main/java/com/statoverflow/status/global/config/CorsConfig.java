@@ -22,7 +22,8 @@ public class CorsConfig implements WebMvcConfigurer {
 				"http://localhost:5173",
 				"https://app.statoverflow.cloud",
 				"https://statoverflow.cloud",
-				"http://localhost:8080"));
+				"http://localhost:8080",
+				"https://appleid.apple.com"));
 		// 허용 메서드 지정
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		// 클라이언트 요청 허용 헤더
