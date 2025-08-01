@@ -35,7 +35,7 @@ public class AttributeServiceImpl implements AttributeService {
 
     @Override
     public List<AttributesReturnDto> getAttributes(Long userId) {
-        List<UsersAttributeProgress> attributes = usersAttributeProgressRepository.findByUserId(userId);
+        List<UsersAttributeProgress> attributes = usersAttributeProgressRepository.findByUserIdOrderByAttributeId(userId);
 
         return attributes.stream()
                 .map(AttributesReturnDto::fromEntity)
