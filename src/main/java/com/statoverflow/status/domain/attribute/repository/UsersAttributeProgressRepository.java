@@ -10,4 +10,6 @@ import java.util.List;
 public interface UsersAttributeProgressRepository extends JpaRepository<UsersAttributeProgress, Long> {
 
     List<UsersAttributeProgress> findByUserId(Long userId);
+
+	UsersAttributeProgress findByUserIdAndAttributeId(Long usersId, int attributeId);
 }

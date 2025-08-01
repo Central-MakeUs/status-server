@@ -48,7 +48,7 @@ public class TokenService {
 			.path("/")
 			.sameSite("None")
 			.maxAge(Duration.ofSeconds(maxAge))
-			.domain(".statoverflow.cloud")
+			// .domain(".statoverflow.cloud")
 			.build();
 	}
 }

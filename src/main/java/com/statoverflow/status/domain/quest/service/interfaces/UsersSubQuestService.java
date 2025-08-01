@@ -2,7 +2,7 @@ package com.statoverflow.status.domain.quest.service.interfaces;
 
 import java.util.List;
 
-import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;

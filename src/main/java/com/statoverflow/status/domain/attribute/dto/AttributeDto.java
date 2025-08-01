@@ -1,8 +1,9 @@
-package com.statoverflow.status.domain.quest.dto;
+package com.statoverflow.status.domain.attribute.dto;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.statoverflow.status.domain.master.entity.Attribute;
 import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
 import com.statoverflow.status.domain.quest.entity.UsersMainQuest;

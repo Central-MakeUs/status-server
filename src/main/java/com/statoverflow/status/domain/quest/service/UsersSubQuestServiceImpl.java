@@ -12,7 +12,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.attribute.service.AttributeService;
+import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
@@ -20,10 +21,10 @@ import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuestLog;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
 import com.statoverflow.status.domain.quest.enums.QuestStatus;
-import com.statoverflow.status.domain.quest.repository.UsersMainQuestRepository;
 import com.statoverflow.status.domain.quest.repository.UsersSubQuestLogRepository;
 import com.statoverflow.status.domain.quest.repository.UsersSubQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.UsersSubQuestService;
+import com.statoverflow.status.domain.users.enums.SourceType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 	private final UsersSubQuestRepository usersSubQuestRepository;
 	private final UsersSubQuestLogRepository usersSubQuestLogRepository;
+	private final AttributeService attributeService;
 
 
 	@Override
@@ -142,7 +144,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 		usersSubQuestLogRepository.save(usql);
 
-		// todo: 경험치 올려주는 로직
+		attributeService.addExp(usq.getUsers(), AttributeDto.fromUsersSubQuest(usq), SourceType.SUBQUESTLOG);
 
 		return AttributeDto.fromUsersSubQuest(usq);
 	}

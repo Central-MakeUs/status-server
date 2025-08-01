@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 
 public record UsersMainQuestResponseDto(
 	Long id,

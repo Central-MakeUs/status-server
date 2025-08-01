@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
 import com.statoverflow.status.domain.master.entity.SubQuest;
-import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
