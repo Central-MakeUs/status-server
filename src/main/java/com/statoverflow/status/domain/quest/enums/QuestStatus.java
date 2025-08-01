@@ -8,7 +8,8 @@ public enum QuestStatus {
 	INACTIVE("inactive"),
 	COMPLETED("completed"),
 	DELETED("deleted"),
-	WEEKLY_COMPLETED("weekly_completed");
+	WEEKLY_COMPLETED("weekly_completed"),
+	ENDED("ended");
 
 	private final String field;
 }

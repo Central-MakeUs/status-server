@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UsersSubQuestRepository extends JpaRepository<UsersSubQuest, Long> {
@@ -16,5 +17,5 @@ public interface UsersSubQuestRepository extends JpaRepository<UsersSubQuest, Lo
 
     List<UsersSubQuest> findByUsersIdAndMainQuestIdAndStatusIn(Long userId, Long mainQuestId, List<QuestStatus> statuses);
 
-    UsersSubQuest findByIdAndUsersIdAndStatus(Long id, Long userId, QuestStatus questStatus);
+    Optional<UsersSubQuest> findByIdAndUsersIdAndStatus(Long id, Long userId, QuestStatus questStatus);
 }
