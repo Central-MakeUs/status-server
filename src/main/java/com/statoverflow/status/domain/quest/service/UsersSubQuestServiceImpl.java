@@ -1,7 +1,10 @@
 package com.statoverflow.status.domain.quest.service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -25,6 +28,8 @@ import com.statoverflow.status.domain.quest.repository.UsersSubQuestLogRepositor
 import com.statoverflow.status.domain.quest.repository.UsersSubQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.UsersSubQuestService;
 import com.statoverflow.status.domain.users.enums.SourceType;
+import com.statoverflow.status.global.error.ErrorType;
+import com.statoverflow.status.global.exception.CustomException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -132,9 +137,9 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	@Override
 	public List<AttributeDto> doSubQuest(Long userId, SubQuestLogDto dto) {
 		log.debug("유저 id: {}, userSubQuestId: {}", userId, dto.id());
-		UsersSubQuest usq = usersSubQuestRepository.findByIdAndUsersIdAndStatus(dto.id(), userId, QuestStatus.ACTIVE);
+		UsersSubQuest usq = usersSubQuestRepository.findByIdAndUsersIdAndStatus(dto.id(), userId, QuestStatus.ACTIVE)
+			.orElseThrow(() -> new CustomException(ErrorType.COMPLETED_SUBQUEST));
 		log.debug("유저 서브퀘스트 정보: {}", usq.toString());
-		// todo: 인증 횟수에 따라 usersSubQuest 내 QuestStatus 변경해주는 작업. ACTIVE, WEEKLY_COMPLETED, COMPLETED
 
 		UsersSubQuestLog usql = UsersSubQuestLog.builder()
 			.usersSubQuest(usq)
@@ -145,6 +150,8 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		usersSubQuestLogRepository.save(usql);
 
 		attributeService.addExp(usq.getUsers(), AttributeDto.fromUsersSubQuest(usq), SourceType.SUBQUESTLOG);
+
+		setStatus(usq);
 
 		return AttributeDto.fromUsersSubQuest(usq);
 	}
@@ -262,6 +269,60 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 			default:
 				return new RepeatAndEssential(0, false);
+		}
+	}
+
+	// 서브 퀘스트 로그에 따른 퀘스트 완료 상황
+	private void setStatus(UsersSubQuest usq) {
+		FrequencyType type = usq.getFrequencyType();
+		List<UsersSubQuestLog> logs = usq.getLogs();
+		switch (type) {
+			case DAILY:
+				// 매일 퀘스트는 무조건 COMPLETED로 처리
+				usq.setStatus(QuestStatus.COMPLETED);
+				break;
+
+			case WEEKLY_1:
+			case WEEKLY_2:
+			case WEEKLY_3:
+			case WEEKLY_4:
+			case WEEKLY_5:
+			case WEEKLY_6:
+				// 주간 퀘스트 처리
+				long requiredCount = type.getCnt();
+
+				// 이번 주 로그만 필터링
+				LocalDate mainQuestStartDate = usq.getMainQuest().getStartDate();
+				long daysSinceMainQuestStart = ChronoUnit.DAYS.between(mainQuestStartDate, LocalDate.now());
+				long currentWeekOffset = (daysSinceMainQuestStart / 7) * 7;
+				LocalDate currentWeekStartDate = mainQuestStartDate.plusDays(currentWeekOffset);
+
+				log.info("주간 퀘스트 - 메인 퀘스트 시작일: {}", mainQuestStartDate);
+				log.info("주간 퀘스트 - 메인 퀘스트 시작일로부터 오늘까지의 총 일수: {}", daysSinceMainQuestStart);
+				log.info("주간 퀘스트 - 현재 주차 시작일 (계산): {}", currentWeekStartDate);
+
+				// 3. 오늘 날짜가 현재 주차의 마지막 날부터 며칠 떨어져 있는지 계산합니다.
+				long weeklyLogCount = logs.stream()
+					.filter(log -> !log.getCreatedAt().isBefore(currentWeekStartDate.atStartOfDay()))
+					.count();
+
+				log.debug("주 내 서브퀘스트 완료 횟수: {}", weeklyLogCount);
+
+				if (weeklyLogCount >= requiredCount) {
+					usq.setStatus(QuestStatus.WEEKLY_COMPLETED);
+				} else {
+					// 요구 횟수 미만이면 COMPLETED로 처리
+					usq.setStatus(QuestStatus.COMPLETED);
+				}
+				break;
+
+			case MONTHLY_1:
+			case MONTHLY_2:
+			case MONTHLY_3:
+			case MONTHLY_4:
+				// 월간 퀘스트는 무조건 COMPLETED로 처리
+				usq.setStatus(QuestStatus.COMPLETED);
+				break;
 		}
 	}
 }

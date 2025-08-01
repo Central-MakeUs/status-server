@@ -25,7 +25,7 @@ public enum ErrorType {
 
     // 서브 퀘스트 에러
     INVALID_SUBQUEST_SELECTED(HttpStatus.BAD_REQUEST, "05-001", "선택된 서브퀘스트의 갯수가 잘못되었습니다."),
-
+    COMPLETED_SUBQUEST(HttpStatus.BAD_REQUEST, "05-002", "이미 완료한 서브퀘스트 입니다.")
     ;
 
     private final HttpStatus status;
