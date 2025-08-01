@@ -90,12 +90,12 @@ public class OAuthController {
     @Operation(summary = "3. 애플 소셜 로그인",
         description = "애플로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
     @PostMapping("/apple-login")
-    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> appleOauthLogin(@RequestParam String code,
-        @RequestParam(required = false) String user, HttpServletResponse response) {
-        log.info("애플 로그인 요청 수신, 코드: {}", code);
-        log.info("애플 로그인 요청 수신, 유저 정보: {}", user);
+    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> appleOauthLogin(
+        @RequestBody OAuthLoginRequestDto request,
+        HttpServletResponse response) {
+        log.info("애플 로그인 요청 수신, 코드: {}", request.code());
 
-        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.APPLE, code);
+        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.APPLE, request.code());
 
         // 애플 토큰 발급 후 식별자 코드 발급
         OAuthProviderDto provider = oAuthService.getProviderId(req);
