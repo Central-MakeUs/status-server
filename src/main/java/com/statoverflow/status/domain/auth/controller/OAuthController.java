@@ -86,6 +86,8 @@ public class OAuthController {
         return ApiResponse.ok(res);
     }
 
+    @Operation(summary = "3. 애플 소셜 로그인",
+        description = "애플로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
     @PostMapping("/apple-login")
     public ResponseEntity<ApiResponse<SocialLoginReturnDto>> appleOauthLogin(@RequestBody OAuthLoginRequestDto request,
         HttpServletResponse response) {
@@ -93,7 +95,7 @@ public class OAuthController {
 
         OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.APPLE, request.code());
 
-        // 구글 토큰 발급 후 식별자 코드 발급
+        // 애플 토큰 발급 후 식별자 코드 발급
         OAuthProviderDto provider = oAuthService.getProviderId(req);
 
         // 식별자 코드로 user 정보 받기(없다면 회원가입 처리)
@@ -108,32 +110,7 @@ public class OAuthController {
         return ApiResponse.ok(res);
     }
 
-    @Operation(summary = "3. 액세스 토큰 재발급",
-        description = "리프레시 토큰을 이용하여 새로운 액세스 토큰을 발급합니다.")
-    @PostMapping("/apple-login")
-    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> appleOauthLogin(@RequestBody OAuthLoginRequestDto request,
-        HttpServletResponse response) {
-        log.info("애플 로그인 요청 수신, 코드: {}", request.code());
-
-        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.APPLE, request.code());
-
-        // 구글 토큰 발급 후 식별자 코드 발급
-        OAuthProviderDto provider = oAuthService.getProviderId(req);
-
-        // 식별자 코드로 user 정보 받기(없다면 회원가입 처리)
-        SocialLoginReturnDto res = usersService.getUsersByProvider(provider);
-
-        if(res instanceof BasicUsersDto) {
-            // AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
-            tokenService.issueAndSetTokens((BasicUsersDto) res, response);
-
-        }
-
-        return ApiResponse.ok(res);
-
-    }
-
-	@Operation(summary = "3. 액세스 토큰 재발급",
+	@Operation(summary = "4. 액세스 토큰 재발급",
 		description = "리프레시 토큰을 이용하여 새로운 액세스 토큰을 발급합니다.")
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<BasicUsersDto>> getAccessToken(
@@ -148,7 +125,7 @@ public class OAuthController {
         return ApiResponse.ok(res);
     }
 
-    @Operation(summary = "4. 로그아웃",
+    @Operation(summary = "5. 로그아웃",
         description = "사용자 로그아웃을 처리하고 쿠키에 저장된 토큰을 삭제합니다.")
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(
