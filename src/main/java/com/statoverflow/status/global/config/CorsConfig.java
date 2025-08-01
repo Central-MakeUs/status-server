@@ -3,6 +3,7 @@ package com.statoverflow.status.global.config;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -13,16 +14,15 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
+	@Value("${status.global.config.cors.allowed-origins:}")
+	private List<String> allowedOrigins;
+
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 
 		configuration.setAllowedOriginPatterns(
-			List.of("http://localhost:5500",
-				"http://localhost:5173",
-				"https://app.statoverflow.cloud",
-				"https://statoverflow.cloud",
-				"http://localhost:8080"));
+			allowedOrigins);
 		// 허용 메서드 지정
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 		// 클라이언트 요청 허용 헤더
