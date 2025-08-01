@@ -35,7 +35,9 @@ public class UsersController {
 
 	@PatchMapping("/nickname")
 	public ResponseEntity<ApiResponse<BasicUsersDto>> updateNickname(@CurrentUser BasicUsersDto users, @RequestBody NicknameRequestDto req, HttpServletResponse response) {
-		return ApiResponse.ok(usersService.updateNickname(users.id(), req.nickname()));
+		BasicUsersDto updatedUser = usersService.updateNickname(users.id(), req.nickname());
+		tokenService.issueAndSetTokens(updatedUser, response);
+		return ApiResponse.ok(updatedUser);
 	}
 
 	@DeleteMapping("/unregister")
