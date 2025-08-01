@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
-import com.statoverflow.status.domain.quest.dto.AttributeDto;
+import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;

@@ -22,6 +22,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users_attribute_progress")
@@ -43,9 +44,11 @@ public class UsersAttributeProgress {
 	@JoinColumn(name = "attribute_id", nullable = false)
 	private Attribute attribute;
 
+	@Setter
 	@Column(nullable = false)
 	private Integer level;
 
+	@Setter
 	@Column(nullable = false)
 	private Integer exp;
 
