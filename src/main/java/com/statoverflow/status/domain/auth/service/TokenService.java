@@ -28,20 +28,24 @@ public class TokenService {
 		log.info("refreshToken : {}", refreshToken);
 
 		ResponseCookie accessTokenCookie = setTokenCookie("access_token", accessToken,
-			jwtService.getAccessTokenValidityInSeconds());
+			jwtService.getAccessTokenValidityInSeconds(), true);
 
 		ResponseCookie refreshTokenCookie = setTokenCookie("refresh_token", refreshToken,
-			jwtService.getRefreshTokenValidityInSeconds());
+			jwtService.getRefreshTokenValidityInSeconds(), true);
+
+		ResponseCookie isAuthenticated = setTokenCookie("is_authenticated", "",
+			jwtService.getAccessTokenValidityInSeconds(), false);
 
 		log.info("accessTokenCookie : {}", accessTokenCookie);
 		log.info("refreshTokenCookie : {}", refreshTokenCookie);
 
 		response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
 		response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+		response.addHeader(HttpHeaders.SET_COOKIE, isAuthenticated.toString());
 	}
 
 
-	static ResponseCookie setTokenCookie(String name, String token, Long maxAge) {
+	static ResponseCookie setTokenCookie(String name, String token, Long maxAge, Boolean isHttpOnly) {
 		return ResponseCookie.from(name, token)
 			.httpOnly(true)
 			.secure(true)
