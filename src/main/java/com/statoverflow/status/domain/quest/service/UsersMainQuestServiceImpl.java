@@ -80,6 +80,35 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 					usersSubQuestBuilder.exp2((int)(mainSubQuest.getExp2()*multiplier));
 				}
 
+				// requiredLog 계산 로직
+				int requiredLog;
+				long totalDaysBetween = ChronoUnit.DAYS.between(dto.startDate(), dto.endDate());
+
+				switch (subQuestInfo.frequencyType()) {
+					case DAILY:
+						requiredLog = (int) (totalDaysBetween + 1);
+						break;
+					case MONTHLY_1:
+					case MONTHLY_2:
+					case MONTHLY_3:
+					case MONTHLY_4:
+						requiredLog = subQuestInfo.frequencyType().getCnt();
+						break;
+					case WEEKLY_1:
+					case WEEKLY_2:
+					case WEEKLY_3:
+					case WEEKLY_4:
+					case WEEKLY_5:
+					case WEEKLY_6:
+						long totalWeeks = (long) Math.ceil((double) (totalDaysBetween + 1) / 7.0);
+						requiredLog = (int) (totalWeeks * subQuestInfo.frequencyType().getCnt());
+						break;
+					default:
+						requiredLog = 0; // 또는 예외 처리
+						break;
+				}
+				usersSubQuestBuilder.requiredLog(requiredLog);
+
 				UsersSubQuest usersSubQuest = usersSubQuestBuilder.build();
 				UsersSubQuest savedUsersSubQuest = usersSubQuestRepository.save(usersSubQuest);
 				createdUsersSubQuests.add(savedUsersSubQuest);
@@ -150,6 +179,14 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 
 	private UsersMainQuestResponseDto mapToDto(UsersMainQuest umq) {
 
+		int totalRequiredLog = umq.getUsersSubQuests().stream()
+			.mapToInt(UsersSubQuest::getRequiredLog)
+			.sum();
+
+		int totalCompletedLog = umq.getUsersSubQuests().stream()
+			.mapToInt(subQuest -> subQuest.getLogs().size())
+			.sum();
+
 		log.info("totalWeeks 계산: {}", (ChronoUnit.DAYS.between(umq.getStartDate(), umq.getEndDate())+1));
 		UsersMainQuestResponseDto umqrd = new UsersMainQuestResponseDto(
 			umq.getId(),
@@ -158,7 +195,7 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 			(int) (ChronoUnit.DAYS.between(umq.getStartDate(), umq.getEndDate())+1)/7,
 			umq.getTitle(),
 			AttributeDto.fromUsersMainQuest(umq),
-			0 // todo: progress 계산
+			totalCompletedLog * 100 / totalRequiredLog
 		);
 		return umqrd;
 	}

@@ -97,6 +97,9 @@ public class UsersSubQuest {
 	@Column(nullable = true)
 	private Integer exp2;
 
+	@Column(nullable = true)
+	private Integer requiredLog;
+
 	@OneToMany(mappedBy = "usersSubQuest", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 	private List<UsersSubQuestLog> logs = new ArrayList<>();
 
