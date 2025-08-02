@@ -4,8 +4,11 @@ import java.util.List;
 
 import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
+import com.statoverflow.status.domain.quest.dto.response.DoSubQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
+import com.statoverflow.status.domain.quest.entity.UsersSubQuestLog;
 
 public interface UsersSubQuestService {
 	List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long id);
@@ -13,7 +16,10 @@ public interface UsersSubQuestService {
 
 	List<QuestHistoryByDateDto> getSubQuestsLogs(Long userId, Long mainQuestId);
 
-	List<AttributeDto> doSubQuest(Long userId, SubQuestLogDto dto);
+	DoSubQuestResponseDto doSubQuest(Long userId, SubQuestLogDto dto);
 
 	SubQuestLogDto editSubQuest(Long id, SubQuestLogDto dto);
+
+	void checkMainQuestCompleted(UsersMainQuest usersMainQuest);
+
 }

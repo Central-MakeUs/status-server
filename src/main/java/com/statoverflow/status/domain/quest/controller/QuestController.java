@@ -2,6 +2,7 @@ package com.statoverflow.status.domain.quest.controller;
 
 import java.util.List;
 
+import com.statoverflow.status.domain.quest.dto.response.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,12 +18,6 @@ import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
-import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
-import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
-import com.statoverflow.status.domain.quest.dto.response.ThemeResponseDto;
-import com.statoverflow.status.domain.quest.dto.response.UsersMainQuestResponseDto;
 import com.statoverflow.status.domain.quest.service.interfaces.MainQuestService;
 import com.statoverflow.status.domain.quest.service.interfaces.SubQuestService;
 import com.statoverflow.status.domain.quest.service.interfaces.ThemeService;
@@ -158,10 +153,14 @@ public class QuestController {
 	@Operation(summary = "서브 퀘스트 완료", description = "서브 퀘스트를 완료 처리하고 경험치를 부여합니다.")
 	@PostMapping("/sub")
 	public ResponseEntity<ApiResponse<List<AttributeDto>>> doSubQuest(
-		@io.swagger.v3.oas.annotations.parameters.RequestBody(description = "완료할 서브 퀘스트 정보", required = true)
 		@RequestBody SubQuestLogDto dto,
 		@Parameter(hidden = true) @CurrentUser BasicUsersDto user) {
-		return ApiResponse.ok(usersSubQuestService.doSubQuest(user.id(), dto));
+
+		DoSubQuestResponseDto res = usersSubQuestService.doSubQuest(user.id(), dto);
+
+		// 메인퀘스트 완료 여부 체크
+		usersSubQuestService.checkMainQuestCompleted(res.mainQuest());
+		return ApiResponse.ok(res.returns());
 	}
 
 	@Operation(summary = "서브 퀘스트 완료 기록 수정", description = "서브 퀘스트 완료 기록을 수정합니다.")

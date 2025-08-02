@@ -1,23 +1,9 @@
 package com.statoverflow.status.domain.quest.service;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import com.statoverflow.status.domain.attribute.service.AttributeService;
 import com.statoverflow.status.domain.attribute.dto.AttributeDto;
+import com.statoverflow.status.domain.attribute.service.AttributeService;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
+import com.statoverflow.status.domain.quest.dto.response.DoSubQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
@@ -31,9 +17,16 @@ import com.statoverflow.status.domain.quest.service.interfaces.UsersSubQuestServ
 import com.statoverflow.status.domain.users.enums.SourceType;
 import com.statoverflow.status.global.error.ErrorType;
 import com.statoverflow.status.global.exception.CustomException;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +37,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	private final UsersSubQuestRepository usersSubQuestRepository;
 	private final UsersSubQuestLogRepository usersSubQuestLogRepository;
 	private final AttributeService attributeService;
+	private final UsersSubQuestService usersSubQuestService;
 
 
 	@Override
@@ -135,8 +129,9 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		return result;
 	}
 
+//	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	@Override
-	public List<AttributeDto> doSubQuest(Long userId, SubQuestLogDto dto) {
+	public DoSubQuestResponseDto doSubQuest(Long userId, SubQuestLogDto dto) {
 		log.debug("유저 id: {}, userSubQuestId: {}", userId, dto.id());
 		UsersSubQuest usq = usersSubQuestRepository.findByIdAndUsersIdAndStatus(dto.id(), userId, QuestStatus.ACTIVE)
 			.orElseThrow(() -> new CustomException(ErrorType.COMPLETED_SUBQUEST));
@@ -155,13 +150,12 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		// 서브퀘스트 상태 완료 처리
 		setStatus(usq);
 
-		// 메인퀘스트 완료 여부 체크
-		checkMainQuestCompleted(usq.getMainQuest());
-
-		return AttributeDto.fromUsersSubQuest(usq);
+		return new DoSubQuestResponseDto(AttributeDto.fromUsersSubQuest(usq), usq.getMainQuest());
 	}
 
-	private void checkMainQuestCompleted(UsersMainQuest mainQuest) {
+//	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Override
+    public void checkMainQuestCompleted(UsersMainQuest mainQuest) {
 		log.info("메인 퀘스트({} - {}) 완료 여부 확인 시작. 기간: {} ~ {}",
 			mainQuest.getId(), mainQuest.getTitle(), mainQuest.getStartDate(), mainQuest.getEndDate());
 
@@ -170,7 +164,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		for (UsersSubQuest usersSubQuest : mainQuest.getUsersSubQuests()) {
 			boolean subQuestCompleted = false;
 
-			List<UsersSubQuestLog> logs = usersSubQuest.getLogs();
+			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(usersSubQuest.getId());
 			int cnt = logs.size();
 			LocalDate startDate = mainQuest.getStartDate();
 			LocalDate endDate = mainQuest.getEndDate();
@@ -240,7 +234,6 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 				log.info("  -> 서브 퀘스트({} - {}) 실패. 메인 퀘스트 완료 실패 처리.",
 					usersSubQuest.getId(), usersSubQuest.getDescription());
 				allSubQuestsCompleted = false;
-				break;
 			} else {
 				log.debug("  -> 서브 퀘스트({} - {}) 완료.",
 					usersSubQuest.getId(), usersSubQuest.getDescription());
