@@ -1,11 +1,7 @@
 package com.statoverflow.status.domain.auth.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
 import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
@@ -171,5 +167,12 @@ public class OAuthController {
         log.info("사용자 로그아웃 처리 및 쿠키 삭제 지시 완료.");
 
         return ApiResponse.noContent();
+    }
+
+    @Operation(summary = "토큰 조회", description = "사용자의 토큰이 유효한지 검증합니다.")
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<Boolean>> checkTokenAvailable(@CurrentUser BasicUsersDto users) {
+        if(users == null) { return ApiResponse.ok(false);}
+        return ApiResponse.ok(true);
     }
 }
