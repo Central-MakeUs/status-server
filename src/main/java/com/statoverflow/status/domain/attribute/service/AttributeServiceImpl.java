@@ -6,6 +6,10 @@ import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
 import com.statoverflow.status.domain.attribute.repository.UsersAttributeLogRepository;
 import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
 import com.statoverflow.status.domain.master.entity.Attribute;
+import com.statoverflow.status.domain.master.entity.AttributeLevel;
+import com.statoverflow.status.domain.master.entity.AttributeLevelId;
+import com.statoverflow.status.domain.master.enums.AttributeType;
+import com.statoverflow.status.domain.master.repository.AttributeLevelRepository;
 import com.statoverflow.status.domain.users.entity.Users;
 import com.statoverflow.status.domain.users.entity.UsersAttributeLog;
 import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
@@ -20,6 +24,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -32,13 +37,23 @@ public class AttributeServiceImpl implements AttributeService {
     private final UsersAttributeProgressRepository usersAttributeProgressRepository;
     private final UsersAttributeLogRepository usersAttributeLogRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final AttributeLevelRepository attributeLevelRepository;
 
     @Override
     public List<AttributesReturnDto> getAttributes(Long userId) {
         List<UsersAttributeProgress> attributes = usersAttributeProgressRepository.findByUserIdOrderByAttributeId(userId);
 
+        Map<AttributeType, Map<Integer, Integer>> levelExpMap = attributeLevelRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        level -> level.getId().getType(),
+                        Collectors.toMap(
+                                level -> level.getId().getLevel(),
+                                AttributeLevel::getRequiredExp
+                        )
+                ));
+
         return attributes.stream()
-                .map(AttributesReturnDto::fromEntity)
+                .map(usersAttributeProgress -> AttributesReturnDto.fromEntity(usersAttributeProgress, levelExpMap))
                 .collect(Collectors.toList());
     }
 
@@ -76,6 +91,19 @@ public class AttributeServiceImpl implements AttributeService {
 
     public List<Attribute> toEntity(List<AttributeDto> dtos) {
         return dtos.stream().map(attributeDto -> attributeRepository.findById(attributeDto.id()).orElseThrow()).toList();
+    }
+
+
+    public AttributesReturnDto fromEntity(UsersAttributeProgress entity) {
+        return new AttributesReturnDto(
+                entity.getAttribute().getId(),
+                entity.getAttribute().getName(),
+                entity.getAttribute().getType(),
+                entity.getAttribute().getDescription(),
+                entity.getLevel(),
+                entity.getExp(),
+                attributeLevelRepository.findById(new AttributeLevelId(entity.getAttribute().getType(),entity.getLevel())).orElseThrow().getRequiredExp()-entity.getExp()
+                );
     }
 
 }
