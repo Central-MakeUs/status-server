@@ -39,6 +39,30 @@ public class OAuthController {
     private final TokenService tokenService;
     private final JwtService jwtService;
 
+    @Operation(summary = "1. 소셜 통합 로그인",
+            description = "인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> OauthLogin(@RequestBody OAuthLoginRequestDto req,
+                                                                        HttpServletResponse response) {
+        log.debug("로그인 요청 수신, 코드: {}", req.code());
+        log.debug("로그인 소셜 플랫폼: {}", req.provider());
+
+        // 카카오 토큰 발급 후 식별자 코드 발급
+        OAuthProviderDto provider = oAuthService.getProviderId(req);
+
+        // 식별자 코드로 user 정보 받기
+        SocialLoginReturnDto res = usersService.getUsersByProvider(provider);
+
+        if(res instanceof BasicUsersDto) {
+            // AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
+            tokenService.issueAndSetTokens((BasicUsersDto) res, response);
+        }
+
+        return ApiResponse.ok(res);
+    }
+
+
+    @Deprecated
     @Operation(summary = "1. 카카오 소셜 로그인",
         description = "카카오로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
     @PostMapping("/kakao-login")
@@ -63,6 +87,7 @@ public class OAuthController {
         return ApiResponse.ok(res);
     }
 
+    @Deprecated
     @Operation(summary = "2. 구글 소셜 로그인",
         description = "구글로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
     @PostMapping("/google-login")
@@ -87,6 +112,7 @@ public class OAuthController {
         return ApiResponse.ok(res);
     }
 
+    @Deprecated
     @Operation(summary = "3. 애플 소셜 로그인",
         description = "애플로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
     @PostMapping("/apple-login")
