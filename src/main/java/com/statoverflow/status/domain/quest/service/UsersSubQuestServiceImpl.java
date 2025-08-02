@@ -13,13 +13,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.statoverflow.status.domain.attribute.service.AttributeService;
 import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
+import com.statoverflow.status.domain.quest.dto.response.RewardResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuestLog;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
@@ -135,7 +138,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	}
 
 	@Override
-	public List<AttributeDto> doSubQuest(Long userId, SubQuestLogDto dto) {
+	public RewardResponseDto doSubQuest(Long userId, SubQuestLogDto dto) {
 		log.debug("유저 id: {}, userSubQuestId: {}", userId, dto.id());
 		UsersSubQuest usq = usersSubQuestRepository.findByIdAndUsersIdAndStatus(dto.id(), userId, QuestStatus.ACTIVE)
 			.orElseThrow(() -> new CustomException(ErrorType.COMPLETED_SUBQUEST));
@@ -150,10 +153,118 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		usersSubQuestLogRepository.save(usql);
 
 		attributeService.addExp(usq.getUsers(), AttributeDto.fromUsersSubQuest(usq), SourceType.SUBQUESTLOG);
-
+		// 서브퀘스트 상태 완료 처리
 		setStatus(usq);
 
-		return AttributeDto.fromUsersSubQuest(usq);
+		// 메인퀘스트 완료 여부 체크
+		Boolean isMainQuestCompleted = checkMainQuestCompleted(usq.getMainQuest());
+
+		List<AttributeDto> mainQuestRewards = new ArrayList<>();
+		if(isMainQuestCompleted) {
+			mainQuestRewards = AttributeDto.fromUsersMainQuest(usq.getMainQuest());
+			usq.getMainQuest().setStatus(QuestStatus.COMPLETED);
+		}
+
+		return new RewardResponseDto(AttributeDto.fromUsersSubQuest(usq), mainQuestRewards, isMainQuestCompleted);
+	}
+
+	protected boolean checkMainQuestCompleted(UsersMainQuest mainQuest) {
+		log.info("메인 퀘스트({} - {}) 완료 여부 확인 시작. 기간: {} ~ {}",
+			mainQuest.getId(), mainQuest.getTitle(), mainQuest.getStartDate(), mainQuest.getEndDate());
+
+		boolean allSubQuestsCompleted = true;
+
+		for (UsersSubQuest usersSubQuest : mainQuest.getUsersSubQuests()) {
+			boolean subQuestCompleted = false;
+
+			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(usersSubQuest.getId());
+			int cnt = logs.size();
+			LocalDate startDate = mainQuest.getStartDate();
+			LocalDate endDate = mainQuest.getEndDate();
+
+			log.debug("  -> 서브 퀘스트({} - {}) 확인 시작. 타입: {}",
+				usersSubQuest.getId(), usersSubQuest.getDescription(), usersSubQuest.getFrequencyType());
+
+			switch (usersSubQuest.getFrequencyType()) {
+				case DAILY:
+					long requiredDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+					subQuestCompleted = (long) cnt == requiredDays;
+					log.debug("    [DAILY] 필수 일수: {}, 실제 로그 수: {}. 완료 여부: {}",
+						requiredDays, cnt, subQuestCompleted);
+
+					break;
+
+				case WEEKLY_1:
+				case WEEKLY_2:
+				case WEEKLY_3:
+				case WEEKLY_4:
+				case WEEKLY_5:
+				case WEEKLY_6:
+					if(usersSubQuest.getStatus() != QuestStatus.WEEKLY_COMPLETED) break;
+					int requiredCntPerWeek = usersSubQuest.getFrequencyType().getCnt();
+					LocalDate currentWeekStart = startDate;
+					subQuestCompleted = true;
+
+					while (!currentWeekStart.isAfter(endDate)) {
+						LocalDate currentWeekEnd = currentWeekStart.plusDays(6);
+						if (currentWeekEnd.isAfter(endDate)) {
+							currentWeekEnd = endDate;
+						}
+
+						LocalDate finalCurrentWeekStart = currentWeekStart;
+						LocalDate finalCurrentWeekEnd = currentWeekEnd;
+						long logsInThisWeek = logs.stream()
+							.filter(log -> !log.getCreatedAt().isBefore(finalCurrentWeekStart.atStartOfDay()) && !log.getCreatedAt().isAfter(
+								finalCurrentWeekEnd.atStartOfDay()))
+							.count();
+
+						if (logsInThisWeek < requiredCntPerWeek) {
+							log.debug("    [WEEKLY] 실패! {} ~ {} 기간 동안 필수 로그 수: {}, 실제 로그 수: {}",
+								finalCurrentWeekStart, finalCurrentWeekEnd, requiredCntPerWeek, logsInThisWeek);
+							subQuestCompleted = false;
+							break;
+						} else {
+							log.debug("    [WEEKLY] 성공. {} ~ {} 기간 동안 필수 로그 수: {}, 실제 로그 수: {}",
+								finalCurrentWeekStart, finalCurrentWeekEnd, requiredCntPerWeek, logsInThisWeek);
+						}
+
+						currentWeekStart = currentWeekStart.plusWeeks(1);
+					}
+					break;
+
+				case MONTHLY_1:
+				case MONTHLY_2:
+				case MONTHLY_3:
+				case MONTHLY_4:
+					int requiredCntForDuration = usersSubQuest.getFrequencyType().getCnt();
+					subQuestCompleted = cnt >= requiredCntForDuration;
+					log.debug("    [MONTHLY] 필수 로그 수: {}, 실제 로그 수: {}. 완료 여부: {}",
+						requiredCntForDuration, cnt, subQuestCompleted);
+					break;
+			}
+
+			if (!subQuestCompleted) {
+				log.info("  -> 서브 퀘스트({} - {}) 실패. 메인 퀘스트 완료 실패 처리.",
+					usersSubQuest.getId(), usersSubQuest.getDescription());
+				allSubQuestsCompleted = false;
+				break;
+			} else {
+				log.debug("  -> 서브 퀘스트({} - {}) 완료.",
+					usersSubQuest.getId(), usersSubQuest.getDescription());
+				usersSubQuest.setStatus(QuestStatus.ENDED);
+			}
+		}
+
+		if (allSubQuestsCompleted) {
+			log.debug("✔ 메인 퀘스트({} - {}) 최종 완료.",
+				mainQuest.getId(), mainQuest.getTitle());
+			return true;
+			// todo: 메인 퀘스트 경험치 주기 + status 설정
+		} else {
+			log.info("❌ 메인 퀘스트({} - {}) 최종 완료 실패.",
+				mainQuest.getId(), mainQuest.getTitle());
+			return false;
+		}
 	}
 
 	@Override
@@ -181,13 +292,18 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	}
 
 	private SubQuestResponseDto mapToSubQuestResponseDto(UsersSubQuest usersSubQuest) {
+
+		// 설명 필드 생성 (플레이스홀더 치환)
+		String formattedDesc = String.format(usersSubQuest.getDescription(), usersSubQuest.getActionUnitNum());
+		log.debug("퀘스트 설명 변환: '{}' -> '{}'", usersSubQuest.getDescription(), formattedDesc);
+
 		return new SubQuestResponseDto(
 			usersSubQuest.getId(),
 			usersSubQuest.getFrequencyType(),
 			usersSubQuest.getActionUnitType().getUnit(),
 			usersSubQuest.getActionUnitNum(),
 			AttributeDto.fromUsersSubQuest(usersSubQuest),
-			usersSubQuest.getDescription()
+			formattedDesc
 		);
 	}
 
