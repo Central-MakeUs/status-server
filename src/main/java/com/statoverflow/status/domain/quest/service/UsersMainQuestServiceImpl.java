@@ -179,6 +179,14 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 
 	private UsersMainQuestResponseDto mapToDto(UsersMainQuest umq) {
 
+		int totalRequiredLog = umq.getUsersSubQuests().stream()
+			.mapToInt(UsersSubQuest::getRequiredLog)
+			.sum();
+
+		int totalCompletedLog = umq.getUsersSubQuests().stream()
+			.mapToInt(subQuest -> subQuest.getLogs().size())
+			.sum();
+
 		log.info("totalWeeks 계산: {}", (ChronoUnit.DAYS.between(umq.getStartDate(), umq.getEndDate())+1));
 		UsersMainQuestResponseDto umqrd = new UsersMainQuestResponseDto(
 			umq.getId(),
@@ -187,7 +195,7 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 			(int) (ChronoUnit.DAYS.between(umq.getStartDate(), umq.getEndDate())+1)/7,
 			umq.getTitle(),
 			AttributeDto.fromUsersMainQuest(umq),
-			0 // todo: progress 계산
+			totalCompletedLog * 100 / totalRequiredLog
 		);
 		return umqrd;
 	}
