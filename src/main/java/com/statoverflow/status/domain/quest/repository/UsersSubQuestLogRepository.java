@@ -12,7 +12,5 @@ public interface UsersSubQuestLogRepository extends JpaRepository<UsersSubQuestL
 
 	int countByUsersSubQuestIdAndCreatedAtAfter(Long usersSubQuestId, LocalDateTime startDate);
 
-	List<UsersSubQuestLog> findByUsersSubQuest(UsersSubQuest subQuest);
-
 	List<UsersSubQuestLog> findByUsersSubQuestId(Long id);
 }

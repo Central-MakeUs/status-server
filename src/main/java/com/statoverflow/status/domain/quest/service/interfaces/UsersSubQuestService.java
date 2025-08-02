@@ -5,6 +5,7 @@ import java.util.List;
 import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
+import com.statoverflow.status.domain.quest.dto.response.RewardResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 
 public interface UsersSubQuestService {
@@ -13,7 +14,7 @@ public interface UsersSubQuestService {
 
 	List<QuestHistoryByDateDto> getSubQuestsLogs(Long userId, Long mainQuestId);
 
-	List<AttributeDto> doSubQuest(Long userId, SubQuestLogDto dto);
+	RewardResponseDto doSubQuest(Long userId, SubQuestLogDto dto);
 
 	SubQuestLogDto editSubQuest(Long id, SubQuestLogDto dto);
 }
