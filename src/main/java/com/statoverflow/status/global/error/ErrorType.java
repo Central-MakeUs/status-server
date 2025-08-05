@@ -23,6 +23,9 @@ public enum ErrorType {
 
     INVALID_ATTRIBUTES(HttpStatus.BAD_REQUEST, "03-001", "한 개나 두 개의 능력치를 선택해야 합니다."),
 
+    // 메인 퀘스트 에러 (02)
+    MAINQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "04-001", "해당하는 메인 퀘스트가 존재하지 않습니다."),
+
     // 서브 퀘스트 에러
     INVALID_SUBQUEST_SELECTED(HttpStatus.BAD_REQUEST, "05-001", "선택된 서브퀘스트의 갯수가 잘못되었습니다."),
     COMPLETED_SUBQUEST(HttpStatus.BAD_REQUEST, "05-002", "이미 완료한 서브퀘스트 입니다.")
