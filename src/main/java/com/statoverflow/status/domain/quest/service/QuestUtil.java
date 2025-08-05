@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
@@ -28,9 +29,12 @@ public class QuestUtil {
 	private final ThemeRepository themeRepository;
 	private final Random random;
 
+	@Value("${status.quest.attribute.select_attribute_num}")
+	private int SELECTED_ATTRIBUTE_NUM;
+
 	// 비트마스크 계산 로직
 	int calculateCombinedBitmask(List<Integer> attributes) {
-		if (attributes == null || attributes.isEmpty() || attributes.size() > 2) {
+		if (attributes == null || attributes.isEmpty() || attributes.size() > SELECTED_ATTRIBUTE_NUM) {
 			log.warn("INVALID_ATTRIBUTES: attributes가 유효하지 않습니다. 입력: {}", attributes);
 			throw new CustomException(ErrorType.INVALID_ATTRIBUTES);
 		}
@@ -51,7 +55,7 @@ public class QuestUtil {
 
 	List<QuestTheme> getAllMatchingThemesByAttributes(List<Integer> attributes) {
 		log.debug("getAllMatchingThemesByAttributes 호출. 입력 attributes: {}", attributes);
-		if (attributes == null || attributes.isEmpty() || attributes.size() > 2) {
+		if (attributes == null || attributes.isEmpty() || attributes.size() > SELECTED_ATTRIBUTE_NUM) {
 			log.warn("INVALID_ATTRIBUTES: attributes가 유효하지 않습니다. 입력: {}", attributes);
 			throw new CustomException(ErrorType.INVALID_ATTRIBUTES);
 		}
