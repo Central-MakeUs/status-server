@@ -12,7 +12,7 @@ import com.statoverflow.status.domain.master.entity.QuestTheme;
 @Repository
 public interface ThemeRepository extends JpaRepository<QuestTheme, Long> {
 
-	@Query(value = "SELECT * FROM quest_theme qt WHERE (qt.linked_attribute & :selectedAttributes) > 0", nativeQuery = true)
+	@Query(value = "SELECT * FROM quest_theme qt WHERE (qt.linked_attribute & :selectedAttributes) = :selectedAttributes", nativeQuery = true)
 	List<QuestTheme> findAllByAttributes(@Param("selectedAttributes") int selectedAttributes);
 
 
