@@ -52,7 +52,7 @@ public class TokenService {
 
 	static ResponseCookie setTokenCookie(String name, String token, Long maxAge, Boolean isHttpOnly) {
 		return ResponseCookie.from(name, token)
-			.httpOnly(true)
+			.httpOnly(isHttpOnly)
 			.secure(true)
 			.path("/")
 			.sameSite("None")
