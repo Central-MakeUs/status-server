@@ -12,6 +12,7 @@ public record CreateQuestResponseDto(
 	int totalWeeks,
 	String title,
 	List<AttributeDto> attributes,
-	List<SubQuestResponseDto> subQuests
+	List<SubQuestResponseDto> subQuests,
+	String npcName
 ) {
 }

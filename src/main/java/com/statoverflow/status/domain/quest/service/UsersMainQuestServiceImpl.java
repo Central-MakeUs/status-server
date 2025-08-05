@@ -146,7 +146,8 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 			totalWeeks,
 			umq.getTitle(),
 			mainQuestAttributes,
-			subQuestResponseDtos
+			subQuestResponseDtos,
+			mainQuest.getNpcName()
 		);
 	}
 
