@@ -124,7 +124,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 							);
 
 						// 최종 SubQuestLogsResponseDto 생성
-						return new QuestHistoryByDateDto.SubQuestLogsResponseDto(mapToSubQuestResponseDto(usersSubQuest), subQuestLogDto);
+						return new QuestHistoryByDateDto.SubQuestLogsResponseDto(mapToUsersSubQuestResponseDto(usersSubQuest), subQuestLogDto);
 					})
 					.collect(Collectors.toList());
 

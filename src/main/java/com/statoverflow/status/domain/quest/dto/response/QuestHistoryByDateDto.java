@@ -11,7 +11,7 @@ public record QuestHistoryByDateDto(
 ) {
 
 	public record SubQuestLogsResponseDto(
-		SubQuestResponseDto userSubQuest,
+		SubQuestResponseDto.UsersSubQuestResponseDto userSubQuest,
 		SubQuestLogDto log
 	) {
 
