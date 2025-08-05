@@ -3,6 +3,7 @@ package com.statoverflow.status.domain.quest.service;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -25,6 +26,8 @@ import com.statoverflow.status.domain.quest.repository.UsersSubQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.UsersMainQuestService;
 import com.statoverflow.status.domain.users.entity.Users;
 import com.statoverflow.status.domain.users.repository.UsersRepository;
+import com.statoverflow.status.global.error.ErrorType;
+import com.statoverflow.status.global.exception.CustomException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -176,6 +179,15 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	@Transactional(readOnly = true)
 	public List<UsersMainQuest> getUsersMainQuestByUserId(Long userId) {
 		return usersMainQuestRepository.findByUsersIdAndStatus(userId, QuestStatus.ACTIVE);
+	}
+
+	@Override
+	public UsersMainQuestResponseDto getUsersMainQuestById(Long userId, Long mainQuestId) {
+		return getUsersMainQuestByUserId(userId).stream()
+			.filter(usersMainQuest -> Objects.equals(usersMainQuest.getId(), mainQuestId))
+			.findFirst()
+			.map(this::mapToDto)
+			.orElseThrow(() -> new CustomException(ErrorType.MAINQUEST_NOT_FOUND));
 	}
 
 	private UsersMainQuestResponseDto mapToDto(UsersMainQuest umq) {

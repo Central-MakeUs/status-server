@@ -12,4 +12,5 @@ public interface UsersMainQuestService {
 	void deleteMainQuest(Long mainQuestId);
 	List<UsersMainQuestResponseDto> getUsersMainQuests(Long id);
 	List<UsersMainQuest> getUsersMainQuestByUserId(Long userId);
+	UsersMainQuestResponseDto getUsersMainQuestById(Long userId, Long mainQuestId);
 }
