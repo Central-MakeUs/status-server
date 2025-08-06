@@ -73,7 +73,8 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 					.actionUnitNum(subQuestInfo.actionUnitNum())
 					.attribute1(mainSubQuest.getAttribute1());
 
-				double multiplier = mainSubQuest.getSubQuest().getActionUnitType().getExpMultiplier(subQuestInfo.actionUnitNum()).orElseThrow();
+				double multiplier = mainSubQuest.getSubQuest().getActionUnitType().getExpMultiplier(subQuestInfo.actionUnitNum())
+					.orElseThrow(() -> new CustomException(ErrorType.INVALID_FIELD));
 
 
 					usersSubQuestBuilder.exp1((int)(mainSubQuest.getExp1()*multiplier));

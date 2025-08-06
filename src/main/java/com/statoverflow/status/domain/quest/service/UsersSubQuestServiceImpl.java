@@ -285,6 +285,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		boolean essential = rae.essential;
 
 		return new SubQuestResponseDto.UsersSubQuestResponseDto(
+			usersSubQuest.getMainQuest().getId(),
 			subQuestInfo,
 			repeatCnt,
 			essential

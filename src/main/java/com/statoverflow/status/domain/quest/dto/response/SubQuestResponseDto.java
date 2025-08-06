@@ -14,6 +14,7 @@ public record SubQuestResponseDto(Long id,
 
 
 	public record UsersSubQuestResponseDto(
+		Long mainQuestId,
 		SubQuestResponseDto subQuestInfo,
 		int repeatCnt, // repeatCnt 회 남음
 		boolean essential // 필수 여부
