@@ -74,7 +74,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 		// 1. 메인 퀘스트 내 활성/주간 완료 상태의 서브 퀘스트 리스트를 가져옵니다.
 		List<UsersSubQuest> subQuestList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(
-			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.WEEKLY_ACCOMPLISHED));
+			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.ACCOMPLISHED, QuestStatus.WEEKLY_ACCOMPLISHED));
 
 		log.debug("조회된 subQuestList: {}", subQuestList);
 		// 2. 각 서브 퀘스트에 대한 모든 로그를 가져옵니다.
@@ -390,11 +390,6 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		FrequencyType type = usq.getFrequencyType();
 		List<UsersSubQuestLog> logs = usq.getLogs();
 		switch (type) {
-			case DAILY:
-				// 매일 퀘스트는 무조건 COMPLETED로 처리
-				usq.setStatus(QuestStatus.ACCOMPLISHED);
-				break;
-
 			case WEEKLY_1:
 			case WEEKLY_2:
 			case WEEKLY_3:
@@ -429,10 +424,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 				}
 				break;
 
-			case MONTHLY_1:
-			case MONTHLY_2:
-			case MONTHLY_3:
-			case MONTHLY_4:
+			default:
 				// 월간 퀘스트는 무조건 COMPLETED로 처리
 				usq.setStatus(QuestStatus.ACCOMPLISHED);
 				break;
