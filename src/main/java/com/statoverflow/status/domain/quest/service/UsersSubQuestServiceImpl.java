@@ -1,10 +1,7 @@
 package com.statoverflow.status.domain.quest.service;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -13,7 +10,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.statoverflow.status.domain.attribute.service.AttributeService;
@@ -78,7 +74,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 		// 1. 메인 퀘스트 내 활성/주간 완료 상태의 서브 퀘스트 리스트를 가져옵니다.
 		List<UsersSubQuest> subQuestList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(
-			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.WEEKLY_COMPLETED));
+			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.WEEKLY_ACCOMPLISHED));
 
 		log.debug("조회된 subQuestList: {}", subQuestList);
 		// 2. 각 서브 퀘스트에 대한 모든 로그를 가져옵니다.
@@ -162,7 +158,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		List<AttributeDto> mainQuestRewards = new ArrayList<>();
 		if(isMainQuestCompleted) {
 			mainQuestRewards = AttributeDto.fromUsersMainQuest(usq.getMainQuest());
-			usq.getMainQuest().setStatus(QuestStatus.COMPLETED);
+			usq.getMainQuest().setStatus(QuestStatus.ACCOMPLISHED);
 		}
 
 		return new RewardResponseDto(AttributeDto.fromUsersSubQuest(usq), mainQuestRewards, isMainQuestCompleted);
@@ -200,7 +196,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 				case WEEKLY_4:
 				case WEEKLY_5:
 				case WEEKLY_6:
-					if(usersSubQuest.getStatus() != QuestStatus.WEEKLY_COMPLETED) break;
+					if(usersSubQuest.getStatus() != QuestStatus.WEEKLY_ACCOMPLISHED) break;
 					int requiredCntPerWeek = usersSubQuest.getFrequencyType().getCnt();
 					LocalDate currentWeekStart = startDate;
 					subQuestCompleted = true;
@@ -251,7 +247,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 			} else {
 				log.debug("  -> 서브 퀘스트({} - {}) 완료.",
 					usersSubQuest.getId(), usersSubQuest.getDescription());
-				usersSubQuest.setStatus(QuestStatus.ENDED);
+				usersSubQuest.setStatus(QuestStatus.COMPLETED);
 			}
 		}
 
@@ -396,7 +392,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		switch (type) {
 			case DAILY:
 				// 매일 퀘스트는 무조건 COMPLETED로 처리
-				usq.setStatus(QuestStatus.COMPLETED);
+				usq.setStatus(QuestStatus.ACCOMPLISHED);
 				break;
 
 			case WEEKLY_1:
@@ -426,10 +422,10 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 				log.debug("주 내 서브퀘스트 완료 횟수: {}", weeklyLogCount);
 
 				if (weeklyLogCount >= requiredCount) {
-					usq.setStatus(QuestStatus.WEEKLY_COMPLETED);
+					usq.setStatus(QuestStatus.WEEKLY_ACCOMPLISHED);
 				} else {
 					// 요구 횟수 미만이면 COMPLETED로 처리
-					usq.setStatus(QuestStatus.COMPLETED);
+					usq.setStatus(QuestStatus.ACCOMPLISHED);
 				}
 				break;
 
@@ -438,7 +434,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 			case MONTHLY_3:
 			case MONTHLY_4:
 				// 월간 퀘스트는 무조건 COMPLETED로 처리
-				usq.setStatus(QuestStatus.COMPLETED);
+				usq.setStatus(QuestStatus.ACCOMPLISHED);
 				break;
 		}
 	}
