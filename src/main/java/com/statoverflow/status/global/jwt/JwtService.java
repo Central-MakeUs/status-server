@@ -1,6 +1,7 @@
 package com.statoverflow.status.global.jwt;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -76,13 +77,14 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
             .compact();
     }
 
-    public void deleteCookie(HttpServletResponse response, String name) {
+    public void deleteCookie(HttpServletResponse response, String name, Boolean isHttpOnly) {
         ResponseCookie cookie = ResponseCookie.from(name, null)
-            .httpOnly(true)
+            .httpOnly(isHttpOnly)
             .secure(true)
             .path("/")
             .sameSite("None")
             .maxAge(0)
+            .domain(".statoverflow.cloud")
             .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }

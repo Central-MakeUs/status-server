@@ -158,9 +158,11 @@ public class OAuthController {
         log.info("로그아웃 요청 수신, 유저: {}", user.toString());
 
         // 액세스 토큰 쿠키 삭제 (Max-Age=0)
-        jwtService.deleteCookie(response, "access_token");
+        jwtService.deleteCookie(response, "access_token", true);
         // 새로고침 토큰 쿠키 삭제 (Max-Age=0)
-        jwtService.deleteCookie(response, "refresh_token");
+        jwtService.deleteCookie(response, "refresh_token", true);
+        // 새로고침 토큰 쿠키 삭제 (Max-Age=0)
+        jwtService.deleteCookie(response, "is_authenticated", false);
 
         // todo: user.provider 에 따라 소셜 로그아웃 필요
 

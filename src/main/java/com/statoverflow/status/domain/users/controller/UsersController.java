@@ -56,8 +56,12 @@ public class UsersController {
 		@Parameter(hidden = true) @CurrentUser BasicUsersDto users,
 		@Parameter(hidden = true) HttpServletResponse response) {
 		// 쿠키 삭제
-		jwtService.deleteCookie(response, "access_token");
-		jwtService.deleteCookie(response, "refresh_token");
+		// 액세스 토큰 쿠키 삭제 (Max-Age=0)
+		jwtService.deleteCookie(response, "access_token", true);
+		// 새로고침 토큰 쿠키 삭제 (Max-Age=0)
+		jwtService.deleteCookie(response, "refresh_token", true);
+		// 새로고침 토큰 쿠키 삭제 (Max-Age=0)
+		jwtService.deleteCookie(response, "is_authenticated", false);
 		usersService.deleteUser(users.id(), response);
 		return ApiResponse.noContent();
 	}
