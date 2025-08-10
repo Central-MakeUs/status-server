@@ -78,7 +78,7 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
     }
 
     public void deleteCookie(HttpServletResponse response, String name, Boolean isHttpOnly) {
-        ResponseCookie cookie = ResponseCookie.from(name, null)
+        ResponseCookie cookie1 = ResponseCookie.from(name, "")
             .httpOnly(isHttpOnly)
             .secure(true)
             .path("/")
@@ -86,7 +86,29 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
             .maxAge(0)
             .domain(".statoverflow.cloud")
             .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        ResponseCookie cookie2 = ResponseCookie.from(name, "")
+            .httpOnly(isHttpOnly)
+            .secure(true)
+            .path("/")
+            .maxAge(0)
+            .domain(".statoverflow.cloud")
+            .build();
+        ResponseCookie cookie3 = ResponseCookie.from(name, "")
+            .httpOnly(isHttpOnly)
+            .secure(true)
+            .path("/")
+            .maxAge(0)
+            .build();
+        ResponseCookie cookie4 = ResponseCookie.from(name, "")
+            .httpOnly(isHttpOnly)
+            .secure(false)
+            .path("/")
+            .maxAge(0)
+            .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie1.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie2.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie3.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie4.toString());
     }
 
     // 토큰 유효성 검증 (더 상세한 예외 처리)
