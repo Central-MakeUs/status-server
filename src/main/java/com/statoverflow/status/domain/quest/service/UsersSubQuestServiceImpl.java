@@ -159,6 +159,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		if(isMainQuestCompleted) {
 			mainQuestRewards = AttributeDto.fromUsersMainQuest(usq.getMainQuest());
 			usq.getMainQuest().setStatus(QuestStatus.ACCOMPLISHED);
+			attributeService.addExp(usq.getUsers(), mainQuestRewards, SourceType.MAINQUEST);
 		}
 
 		return new RewardResponseDto(AttributeDto.fromUsersSubQuest(usq), mainQuestRewards, isMainQuestCompleted);
