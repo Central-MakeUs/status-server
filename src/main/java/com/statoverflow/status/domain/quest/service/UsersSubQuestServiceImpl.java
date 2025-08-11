@@ -74,7 +74,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 		// 1. 메인 퀘스트 내 활성/주간 완료 상태의 서브 퀘스트 리스트를 가져옵니다.
 		List<UsersSubQuest> subQuestList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(
-			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.ACCOMPLISHED, QuestStatus.WEEKLY_ACCOMPLISHED));
+			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.ACCOMPLISHED, QuestStatus.WEEKLY_ACCOMPLISHED, QuestStatus.COMPLETED));
 
 		log.debug("조회된 subQuestList: {}", subQuestList);
 		// 2. 각 서브 퀘스트에 대한 모든 로그를 가져옵니다.
