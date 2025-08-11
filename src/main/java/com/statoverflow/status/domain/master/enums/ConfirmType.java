@@ -4,7 +4,8 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public enum ConfirmType {
-	MOOD_LOG("mood_log");
+	MOOD_LOG("mood_log"),
+	PHOTO_LOG("photo_log"),;
 
 	private final String field;
 }

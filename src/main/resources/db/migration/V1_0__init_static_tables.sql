@@ -58,7 +58,7 @@ CREATE TABLE public.sub_quest (
                                   confirm_type character varying(255) NOT NULL,
                                   name character varying(255) NOT NULL,
                                   CONSTRAINT sub_quest_action_unit_type_check CHECK (((action_unit_type)::text = ANY ((ARRAY['TIME_SECOND'::character varying, 'TIME_MINUTE'::character varying, 'TIME_HOUR'::character varying, 'NUMBER_1'::character varying, 'NUMBER_2'::character varying, 'NUMBER_3'::character varying, 'DISTANCE'::character varying, 'ONCE'::character varying])::text[]))),
-    CONSTRAINT sub_quest_confirm_type_check CHECK (((confirm_type)::text = 'MOOD_LOG'::text))
+    CONSTRAINT sub_quest_confirm_type_check CHECK (((confirm_type)::text= ANY ((ARRAY['MOOD_LOG'::text, 'PHOTO_LOG'::text]))))
 );
 
 
