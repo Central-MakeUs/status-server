@@ -389,7 +389,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	// 서브 퀘스트 로그에 따른 퀘스트 완료 상황
 	private void setStatus(UsersSubQuest usq) {
 		FrequencyType type = usq.getFrequencyType();
-		List<UsersSubQuestLog> logs = usq.getLogs();
+		List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(usq.getId());
 		switch (type) {
 			case WEEKLY_1:
 			case WEEKLY_2:
