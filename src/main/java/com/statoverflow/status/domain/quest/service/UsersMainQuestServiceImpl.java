@@ -2,6 +2,7 @@ package com.statoverflow.status.domain.quest.service;
 
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -158,7 +159,10 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 
 	@Override
 	public void deleteMainQuest(Long mainQuestId) {
-		UsersMainQuest umq = usersMainQuestRepository.findById(mainQuestId).orElseThrow();
+		UsersMainQuest umq = usersMainQuestRepository.findByIdAndStatusNotIn(mainQuestId,
+			Arrays.asList(QuestStatus.DELETED, QuestStatus.COMPLETED)).orElseThrow(
+			() -> new CustomException(ErrorType.INVALID_MAINQUEST)
+		);
 		umq.setStatus(QuestStatus.DELETED);
 		List<UsersSubQuest> usq = umq.getUsersSubQuests();
 		usq.stream()

@@ -2,6 +2,7 @@ package com.statoverflow.status.domain.quest.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,6 @@ public interface UsersMainQuestRepository extends JpaRepository<UsersMainQuest, 
 	List<UsersMainQuest> findByUsersIdAndStatus(Long userId, QuestStatus questStatus);
 
 	List<UsersMainQuest> findByStatusAndEndDateBefore(QuestStatus status, LocalDate endDate);
+
+	Optional<UsersMainQuest> findByIdAndStatusNotIn(Long mainQuestId, List<QuestStatus> status);
 }
