@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.quest.service;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -9,9 +10,9 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
 import com.statoverflow.status.domain.master.entity.SubQuest;
-import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.quest.dto.request.RerollSubQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
 import com.statoverflow.status.domain.quest.enums.FrequencyType;
@@ -182,7 +183,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 		int actionUnitNumValue = subQuest.getActionUnitType().getDefaultCount();
 
 		// 설명 필드 생성 (플레이스홀더 치환)
-		String formattedDesc = String.format(subQuest.getName(), actionUnitNumValue);
+		String formattedDesc = MessageFormat.format(subQuest.getName(), actionUnitNumValue);
 		log.debug("퀘스트 설명 변환: '{}' -> '{}'", subQuest.getName(), formattedDesc);
 
 		return new SubQuestResponseDto(

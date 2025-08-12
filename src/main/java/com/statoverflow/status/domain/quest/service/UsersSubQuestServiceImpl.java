@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.quest.service;
 
+import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -12,8 +13,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.statoverflow.status.domain.attribute.service.AttributeService;
 import com.statoverflow.status.domain.attribute.dto.AttributeDto;
+import com.statoverflow.status.domain.attribute.service.AttributeService;
 import com.statoverflow.status.domain.quest.dto.SubQuestLogDto;
 import com.statoverflow.status.domain.quest.dto.response.QuestHistoryByDateDto;
 import com.statoverflow.status.domain.quest.dto.response.RewardResponseDto;
@@ -292,8 +293,9 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	private SubQuestResponseDto mapToSubQuestResponseDto(UsersSubQuest usersSubQuest) {
 
 		// 설명 필드 생성 (플레이스홀더 치환)
-		String formattedDesc = String.format(usersSubQuest.getDescription(), usersSubQuest.getActionUnitNum());
+		String formattedDesc = MessageFormat.format(usersSubQuest.getDescription(), usersSubQuest.getActionUnitNum());
 		log.debug("퀘스트 설명 변환: '{}' -> '{}'", usersSubQuest.getDescription(), formattedDesc);
+
 
 		return new SubQuestResponseDto(
 			usersSubQuest.getId(),
