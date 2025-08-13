@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import javax.crypto.SecretKey;
 
@@ -132,16 +133,40 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
 
     public BasicUsersDto parseUsersFromToken(String token) {
 
-        Claims claims = Jwts.parser()
-            .verifyWith(secretKey) // 또는 setSigningKey()
-            .build()
-            .parseSignedClaims(token)
-            .getPayload();
+        Claims claims = parseToken(token);
 
         int id = claims.get("id", Integer.class);
         String nickname = claims.get("nickname", String.class);
 
         return new BasicUsersDto((long) id, nickname);
+
+    }
+
+    public Long getRemainingTime(String token) {
+
+        Claims claims = parseToken(token);
+
+        try {
+            Date expiration = claims.getExpiration();
+            Date now = new Date();
+
+            long remainingTimeMillis = expiration.getTime() - now.getTime();
+
+            // 밀리초를 초로 변환
+            return TimeUnit.MILLISECONDS.toSeconds(remainingTimeMillis);
+
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    public Claims parseToken(String token) {
+
+        return Jwts.parser()
+            .verifyWith(secretKey) // 또는 setSigningKey()
+            .build()
+            .parseSignedClaims(token)
+            .getPayload();
 
     }
 

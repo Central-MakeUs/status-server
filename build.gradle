@@ -58,6 +58,8 @@ dependencies {
 //	implementation("com.google.api-client:google-api-client:${googleOAuth2Version}")// https://mvnrepository.com/artifact/com.google.auth/google-auth-library-oauth2-http
 	implementation("com.google.auth:google-auth-library-oauth2-http:1.37.1")
 
+	// redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 }
 
