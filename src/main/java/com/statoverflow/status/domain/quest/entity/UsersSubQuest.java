@@ -105,7 +105,6 @@ public class UsersSubQuest {
 
 	@PrePersist
 	protected void onCreate() {
-		this.description = subQuest.getName();
 		this.actionUnitType = subQuest.getActionUnitType();
 		this.status = QuestStatus.ACTIVE;
 	}

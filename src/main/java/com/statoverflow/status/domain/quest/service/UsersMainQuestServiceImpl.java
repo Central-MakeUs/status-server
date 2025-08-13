@@ -69,6 +69,7 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 				UsersSubQuest.UsersSubQuestBuilder usersSubQuestBuilder = UsersSubQuest.builder()
 					.users(user)
 					.mainQuest(umq)
+					.description(mainSubQuest.getSubQuest().getName().replace("{actionUnitNum}", Integer.toString(subQuestInfo.actionUnitNum())))
 					.subQuest(mainSubQuest.getSubQuest())
 					.frequencyType(subQuestInfo.frequencyType())
 					.actionUnitNum(subQuestInfo.actionUnitNum())
