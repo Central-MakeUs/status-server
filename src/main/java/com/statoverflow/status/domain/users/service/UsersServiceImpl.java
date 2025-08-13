@@ -24,6 +24,7 @@ import com.statoverflow.status.domain.master.enums.TermsType;
 import com.statoverflow.status.domain.master.repository.NicknameGeneratorRepository;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.domain.users.entity.UsersAgreements;
+import com.statoverflow.status.domain.users.enums.ProviderType;
 import com.statoverflow.status.domain.users.repository.TermsAndConditionsRepository;
 import com.statoverflow.status.domain.users.entity.Users;
 import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
@@ -70,10 +71,15 @@ public class UsersServiceImpl implements UsersService{
 	@Override
 	public BasicUsersDto signUp() {
 		String nickname = generateRandomNickname();
+		String tag = generateTagForNickname(nickname);
 		Users user = Users.builder()
 			.nickname(nickname)
-			.tag(generateTagForNickname(nickname))
+			.tag(tag)
+			.providerType(ProviderType.GUEST)
+			.providerId(tag)
 			.build();
+
+		usersRepository.save(user);
 
 		initializeUserAttributes(user);
 
