@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletResponse;
 public interface UsersService {
 	SocialLoginReturnDto getUsersByProvider(OAuthProviderDto provider);
 
+	BasicUsersDto signUp();
+
 	BasicUsersDto signUp(SignUpRequestDto req);
 
     BasicUsersDto updateNickname(Long userId, String nickname);

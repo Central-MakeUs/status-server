@@ -58,83 +58,20 @@ public class OAuthController {
     }
 
 
-    @Deprecated
-    @Operation(summary = "1. 카카오 소셜 로그인",
-        description = "카카오로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
-    @PostMapping("/kakao-login")
-    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> kakaoOauthLogin(
-        @RequestBody OAuthLoginRequestDto request,
-        HttpServletResponse response) {
-        log.info("카카오 로그인 요청 수신, 코드: {}", request.code());
+    @Operation(summary = "2. 게스트 로그인",
+        description = "인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
+    @PostMapping("/guest")
+    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> guestLogin(@RequestBody HttpServletResponse response) {
+        log.debug("게스트 로그인 요청 수신");
 
-        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.KAKAO, request.code());
+        BasicUsersDto user = usersService.signUp();
+        log.debug("게스트 생성 완료, id: {}, 닉네임: {}", user.id(), user.nickname());
+        tokenService.issueAndSetTokens(user, response);
 
-        // 카카오 토큰 발급 후 식별자 코드 발급
-        OAuthProviderDto provider = oAuthService.getProviderId(req);
-
-        // 식별자 코드로 user 정보 받기
-        SocialLoginReturnDto res = usersService.getUsersByProvider(provider);
-
-        if(res instanceof BasicUsersDto) {
-            // AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
-            tokenService.issueAndSetTokens((BasicUsersDto) res, response);
-        }
-
-        return ApiResponse.ok(res);
+        return ApiResponse.created(user);
     }
 
-    @Deprecated
-    @Operation(summary = "2. 구글 소셜 로그인",
-        description = "구글로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
-    @PostMapping("/google-login")
-    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> googleOauthLogin(
-        @RequestBody OAuthLoginRequestDto request,
-        HttpServletResponse response) {
-        log.info("구글 로그인 요청 수신, 코드: {}", request.code());
-
-        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.GOOGLE, request.code());
-
-        // 구글 토큰 발급 후 식별자 코드 발급
-        OAuthProviderDto provider = oAuthService.getProviderId(req);
-
-        // 식별자 코드로 user 정보 받기(없다면 회원가입 처리)
-        SocialLoginReturnDto res = usersService.getUsersByProvider(provider);
-
-        if(res instanceof BasicUsersDto) {
-            // AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
-            tokenService.issueAndSetTokens((BasicUsersDto) res, response);
-        }
-
-        return ApiResponse.ok(res);
-    }
-
-    @Deprecated
-    @Operation(summary = "3. 애플 소셜 로그인",
-        description = "애플로부터 인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
-    @PostMapping("/apple-login")
-    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> appleOauthLogin(
-        @RequestBody OAuthLoginRequestDto request,
-        HttpServletResponse response) {
-        log.info("애플 로그인 요청 수신, 코드: {}", request.code());
-
-        OAuthLoginRequestDto req = new OAuthLoginRequestDto(ProviderType.APPLE, request.code());
-
-        // 애플 토큰 발급 후 식별자 코드 발급
-        OAuthProviderDto provider = oAuthService.getProviderId(req);
-
-        // 식별자 코드로 user 정보 받기(없다면 회원가입 처리)
-        SocialLoginReturnDto res = usersService.getUsersByProvider(provider);
-
-        if(res instanceof BasicUsersDto) {
-            // AccessToken, RefreshToken 을 발급 후 HttpOnly 쿠키에 저장
-            tokenService.issueAndSetTokens((BasicUsersDto) res, response);
-
-        }
-
-        return ApiResponse.ok(res);
-    }
-
-	@Operation(summary = "4. 액세스 토큰 재발급",
+	@Operation(summary = "3. 액세스 토큰 재발급",
 		description = "리프레시 토큰을 이용하여 새로운 액세스 토큰을 발급합니다.")
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<BasicUsersDto>> getAccessToken(
@@ -145,7 +82,7 @@ public class OAuthController {
 
     }
 
-    @Operation(summary = "5. 로그아웃",
+    @Operation(summary = "4. 로그아웃",
         description = "사용자 로그아웃을 처리하고 쿠키에 저장된 토큰을 삭제합니다.")
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<?>> logout(@CurrentUser BasicUsersDto user,
@@ -162,7 +99,7 @@ public class OAuthController {
         return ApiResponse.noContent();
     }
 
-    @Operation(summary = "토큰 조회", description = "사용자의 토큰이 유효한지 검증합니다.")
+    @Operation(summary = "5. 토큰 조회", description = "사용자의 토큰이 유효한지 검증합니다.")
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<Boolean>> checkTokenAvailable(@CurrentUser BasicUsersDto users) {
         if(users == null) { return ApiResponse.ok(false);}

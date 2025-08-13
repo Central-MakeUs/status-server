@@ -13,7 +13,6 @@ public record SignUpRequestDto(String nickname, OAuthProviderDto provider) {
 			.nickname(this.nickname)
 			.providerId(providerId)
 			.providerType(providerType)
-			.tag("test")
 			.build();
 	}
 }

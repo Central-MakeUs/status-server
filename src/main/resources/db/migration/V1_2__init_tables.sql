@@ -8,7 +8,7 @@ CREATE TABLE public.users (
                               status character varying(255) NOT NULL,
                               tag character varying(255) NOT NULL,
                               profile_image character varying(255),
-                              CONSTRAINT users_provider_type_check CHECK (((provider_type)::text = ANY ((ARRAY['KAKAO'::character varying, 'GOOGLE'::character varying, 'APPLE'::character varying])::text[]))),
+                              CONSTRAINT users_provider_type_check CHECK (((provider_type)::text = ANY ((ARRAY['KAKAO'::character varying, 'GOOGLE'::character varying, 'APPLE'::character varying, 'GUEST'::character varying])::text[]))),
     CONSTRAINT users_status_check CHECK (((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying])::text[])))
 );
 
@@ -96,7 +96,7 @@ CREATE TABLE public.users_main_quest (
                                          users_id bigint NOT NULL,
                                          status character varying(255) NOT NULL,
                                          title character varying(255) NOT NULL,
-                                         CONSTRAINT users_main_quest_status_check CHECK (((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'INACTIVE'::character varying, 'COMPLETED'::character varying, 'DELETED'::character varying])::text[])))
+                                         CONSTRAINT users_main_quest_status_check CHECK (((status)::text = ANY ((ARRAY['ACTIVE'::character varying, 'FAILED'::character varying, 'DELETED'::character varying, 'WEEKLY_ACCOMPLISHED'::character varying, 'COMPLETED'::character varying, 'ACCOMPLISHED'::character varying])::text[])))
 );
 
 

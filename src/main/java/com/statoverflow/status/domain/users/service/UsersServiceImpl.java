@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -16,8 +17,11 @@ import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.dto.SocialLoginReturnDto;
 import com.statoverflow.status.domain.master.entity.Attribute;
+import com.statoverflow.status.domain.master.entity.NicknameGenerator;
 import com.statoverflow.status.domain.master.entity.TermsAndConditions;
+import com.statoverflow.status.domain.master.enums.DefaultNicknameType;
 import com.statoverflow.status.domain.master.enums.TermsType;
+import com.statoverflow.status.domain.master.repository.NicknameGeneratorRepository;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.domain.users.entity.UsersAgreements;
 import com.statoverflow.status.domain.users.repository.TermsAndConditionsRepository;
@@ -42,6 +46,8 @@ public class UsersServiceImpl implements UsersService{
 	private final UsersRepository usersRepository;
 	private final UsersAttributeProgressRepository	usersAttributeProgressRepository;
 	private final AttributeRepository attributeRepository;
+	private final NicknameGeneratorRepository nicknameGeneratorRepository;
+	private final Random random;
 
 	@Value("${status.users.users-service.characters}")
 	private String VALID_CHARACTERS;
@@ -60,6 +66,37 @@ public class UsersServiceImpl implements UsersService{
 			.<SocialLoginReturnDto>map(BasicUsersDto::from)
 			.orElse(provider);
 	}
+
+	@Override
+	public BasicUsersDto signUp() {
+		String nickname = generateRandomNickname();
+		Users user = Users.builder()
+			.nickname(nickname)
+			.tag(generateTagForNickname(nickname))
+			.build();
+
+		initializeUserAttributes(user);
+
+		agreeToLatestRequiredTerms(user);
+
+		log.debug("회원가입 완료: {}", user.getId());
+		return BasicUsersDto.from(user);
+	}
+
+	private String generateRandomNickname() {
+		List<NicknameGenerator> adjectives = nicknameGeneratorRepository.findAllByType(DefaultNicknameType.ADJECTIVE);
+		List<NicknameGenerator> nouns = nicknameGeneratorRepository.findAllByType(DefaultNicknameType.NOUN);
+
+		// 랜덤 인덱스를 생성하여 하나씩 선택
+		String randomAdjective = adjectives.get(random.nextInt(adjectives.size())).getName();
+		String randomNoun = nouns.get(random.nextInt(nouns.size())).getName();
+
+		log.debug("랜덤 닉네임 생성 완료, 닉네임 : {}", randomAdjective + randomNoun);
+
+		// 닉네임 생성
+		return randomAdjective + randomNoun;
+	}
+
 	@Override
 	public BasicUsersDto signUp(SignUpRequestDto req) {
 
