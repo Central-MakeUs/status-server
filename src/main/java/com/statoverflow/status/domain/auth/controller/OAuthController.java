@@ -61,7 +61,7 @@ public class OAuthController {
     @Operation(summary = "2. 게스트 로그인",
         description = "인가 코드를 받아 로그인 및 회원가입을 진행합니다.")
     @PostMapping("/guest")
-    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> guestLogin(@RequestBody HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<SocialLoginReturnDto>> guestLogin(HttpServletResponse response) {
         log.debug("게스트 로그인 요청 수신");
 
         BasicUsersDto user = usersService.signUp();
