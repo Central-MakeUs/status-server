@@ -293,7 +293,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	private SubQuestResponseDto mapToSubQuestResponseDto(UsersSubQuest usersSubQuest) {
 
 		// 설명 필드 생성 (플레이스홀더 치환)
-		String formattedDesc = MessageFormat.format(usersSubQuest.getDescription(), usersSubQuest.getActionUnitNum());
+		String formattedDesc = String.format(usersSubQuest.getDescription(), usersSubQuest.getActionUnitNum());
 		log.debug("퀘스트 설명 변환: '{}' -> '{}'", usersSubQuest.getDescription(), formattedDesc);
 
 

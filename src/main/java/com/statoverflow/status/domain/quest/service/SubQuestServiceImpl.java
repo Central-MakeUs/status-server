@@ -183,7 +183,7 @@ public class SubQuestServiceImpl implements SubQuestService {
 		int actionUnitNumValue = subQuest.getActionUnitType().getDefaultCount();
 
 		// 설명 필드 생성 (플레이스홀더 치환)
-		String formattedDesc = MessageFormat.format(subQuest.getName(), actionUnitNumValue);
+		String formattedDesc = String.format(subQuest.getName(), actionUnitNumValue);
 		log.debug("퀘스트 설명 변환: '{}' -> '{}'", subQuest.getName(), formattedDesc);
 
 		return new SubQuestResponseDto(
