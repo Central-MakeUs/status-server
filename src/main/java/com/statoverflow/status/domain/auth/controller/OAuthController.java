@@ -140,29 +140,20 @@ public class OAuthController {
     public ResponseEntity<ApiResponse<BasicUsersDto>> getAccessToken(
         @Parameter(hidden = true) HttpServletRequest request,
         @Parameter(hidden = true) HttpServletResponse response){
-        log.info("엑세스 토큰 재발급 요청 수신");
-        String refreshTokenOpt = jwtService.resolveTokenFromCookie(request, "refresh_token");
-        jwtService.validateToken(refreshTokenOpt);
-        BasicUsersDto res = jwtService.parseUsersFromToken(refreshTokenOpt);
-        tokenService.issueAndSetTokens(res, response);
 
-        return ApiResponse.ok(res);
+        return ApiResponse.ok(oAuthService.getAccessToken(request, response));
+
     }
 
     @Operation(summary = "5. 로그아웃",
         description = "사용자 로그아웃을 처리하고 쿠키에 저장된 토큰을 삭제합니다.")
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<?>> logout(
-        @Parameter(hidden = true) @CurrentUser BasicUsersDto user,
-        @Parameter(hidden = true) HttpServletResponse response){
-        log.info("로그아웃 요청 수신, 유저: {}", user.toString());
+    public ResponseEntity<ApiResponse<?>> logout(@CurrentUser BasicUsersDto user,
+        HttpServletRequest request,
+        HttpServletResponse response){
 
-        // 액세스 토큰 쿠키 삭제 (Max-Age=0)
-        jwtService.deleteCookie(response, "access_token", true);
-        // 새로고침 토큰 쿠키 삭제 (Max-Age=0)
-        jwtService.deleteCookie(response, "refresh_token", true);
-        // 새로고침 토큰 쿠키 삭제 (Max-Age=0)
-        jwtService.deleteCookie(response, "is_authenticated", false);
+        log.info("로그아웃 요청 수신, 유저: {}", user.toString());
+        oAuthService.logout(request, response);
 
         // todo: user.provider 에 따라 소셜 로그아웃 필요
 

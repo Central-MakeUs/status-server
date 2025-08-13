@@ -1,5 +1,6 @@
 package com.statoverflow.status.global.jwt;
 
+import com.statoverflow.status.domain.auth.service.TokenBlacklistService;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -25,16 +26,22 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 	private final JwtService jwtService;
+	private final TokenBlacklistService tokenBlacklistService;
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 		throws ServletException, IOException {
 
-		String token = jwtService.resolveTokenFromCookie(request, "access_token");
+		String accessToken = jwtService.resolveTokenFromCookie(request, "access_token");
 
-		if (StringUtils.hasText(token) && jwtService.validateToken(token)) {
+		if (StringUtils.hasText(accessToken) && jwtService.validateToken(accessToken)) {
+			if (tokenBlacklistService.isBlacklisted(accessToken)) {
+				SecurityContextHolder.clearContext();
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "토큰이 블랙리스트에 있습니다.");
+				return;
+			}
 			try {
-				BasicUsersDto userDto = jwtService.parseUsersFromToken(token);
+				BasicUsersDto userDto = jwtService.parseUsersFromToken(accessToken);
 
 				PreAuthenticatedAuthenticationToken authentication =
 					new PreAuthenticatedAuthenticationToken(
