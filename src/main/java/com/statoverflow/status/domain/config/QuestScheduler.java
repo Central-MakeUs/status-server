@@ -28,7 +28,7 @@ public class QuestScheduler {
 
 	// todo 3: ACCOMPLISHED를 전부 ACTIVE 처리
 	@Scheduled(cron = "0 1 0 * * *", zone = "Asia/Seoul")
-	private void dailySubQuestMaintenance() {
+	public void dailySubQuestMaintenance() {
 		log.info("### dailySubQuestMaintenance 스케줄러 시작 (매일 00시 01분)");
 		List<UsersSubQuest> subQuests = usersSubQuestRepository.findByStatus(QuestStatus.ACCOMPLISHED);
 
@@ -44,7 +44,7 @@ public class QuestScheduler {
 
 	// todo 2 : 매일 - 서브퀘스트) 해당 요일의 WEEKLY_COMPLETED 다 ACTIVE 처리
 	@Scheduled(cron = "0 2 0 * * *", zone = "Asia/Seoul")
-	private void weeklySubQuestMaintenance() {
+	public void weeklySubQuestMaintenance() {
 		log.info("### weeklySubQuestMaintenance 스케줄러 시작 (매일 00시 02분)");
 		List<UsersSubQuest> subQuests = usersSubQuestRepository.findByStatus(QuestStatus.WEEKLY_ACCOMPLISHED);
 
@@ -62,7 +62,7 @@ public class QuestScheduler {
 
 	// todo 1 : 매일 - 메인퀘스트) 기간 지난 ACTIVE 퀘스트들 FAILED 처리
 	@Scheduled(cron = "0 5 0 * * *", zone = "Asia/Seoul")
-	private void invalidateExpiredMainQuests() {
+	public void invalidateExpiredMainQuests() {
 		log.info("### invalidateExpiredMainQuests 스케줄러 시작 (매일 00시 05분)");
 		List<UsersMainQuest> mainQuests = usersMainQuestRepository.findByStatusAndEndDateBefore(QuestStatus.ACTIVE,
 			LocalDate.now());
