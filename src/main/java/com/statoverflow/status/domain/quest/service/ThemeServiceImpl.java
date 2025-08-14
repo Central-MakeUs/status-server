@@ -1,6 +1,7 @@
 package com.statoverflow.status.domain.quest.service;
 
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -103,9 +104,28 @@ public class ThemeServiceImpl implements ThemeService {
 			return selectRandomThemes(availableThemes);
 		}
 
-		// 부족한 경우 제외된 테마도 포함하여 선택
-		log.debug("테마 부족으로 제외된 테마 재사용 - 전체 후보에서 선택");
-		return selectRandomThemes(candidateThemes);
+		// 부족한 경우: availableThemes를 모두 포함하고, 부족한 개수만큼 제외된 테마에서 추가
+		log.debug("테마 부족으로 제외된 테마에서 추가 선택 - available: {}개, 필요: {}개",
+			availableThemes.size(), OUTPUT_THEME_NUM);
+
+		List<ThemeResponseDto> result = new ArrayList<>(questUtil.selectRandoms(availableThemes, availableThemes.size()));
+
+		// 제외된 테마들만 추출
+		List<ThemeResponseDto> excludedThemes = candidateThemes.stream()
+			.filter(theme -> excludeIds.contains(theme.id()))
+			.collect(Collectors.toList());
+
+		// 부족한 개수 계산
+		int needMore = OUTPUT_THEME_NUM - availableThemes.size();
+
+		// 제외된 테마에서 부족한 개수만큼 랜덤 선택하여 추가
+		List<ThemeResponseDto> additionalThemes = questUtil.selectRandoms(excludedThemes, needMore);
+		result.addAll(additionalThemes);
+
+		log.debug("최종 선택: available {}개 + excluded에서 {}개 = 총 {}개",
+			availableThemes.size(), additionalThemes.size(), result.size());
+
+		return result;
 	}
 
 	/**

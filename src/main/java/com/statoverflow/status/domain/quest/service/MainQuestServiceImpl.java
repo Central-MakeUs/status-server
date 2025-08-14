@@ -158,7 +158,7 @@ public class MainQuestServiceImpl implements MainQuestService {
 		log.debug("제외된 퀘스트에서 추가 선택 완료 - {}개", additionalQuests.size());
 
 		// 필터링된 퀘스트 + 추가 선택된 퀘스트 조합
-		List<MainQuestResponseDto> finalQuests = new ArrayList<>(filteredQuests);
+		List<MainQuestResponseDto> finalQuests = new ArrayList<>(questUtil.selectRandoms(filteredQuests, filteredQuests.size()));
 		finalQuests.addAll(additionalQuests);
 
 		return finalQuests;
