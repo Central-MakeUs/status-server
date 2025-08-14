@@ -1,8 +1,6 @@
 package com.statoverflow.status.domain.quest.service;
 
-import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -25,6 +23,14 @@ import com.statoverflow.status.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 서브 퀘스트 관리 서비스
+ *
+ * 주요 기능:
+ * - 사용자별 서브 퀘스트 조회 및 추천
+ * - 서브 퀘스트 리롤 처리
+ * - 우선순위 기반 퀘스트 선택
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -33,143 +39,145 @@ public class SubQuestServiceImpl implements SubQuestService {
 	private final MainSubQuestRepository mainSubQuestRepository;
 	private final UsersSubQuestService usersSubQuestService;
 	private final QuestUtil questUtil;
+	private final SubQuestDtoConverter dtoConverter;
+	private final SubQuestRerollProcessor rerollProcessor;
 
 	@Value("${status.quest.subquest.output_subquest_num}")
 	private int OUTPUT_SUBQUEST_NUM;
 
-	@Value("${status.quest.subquest.select_subquest_num}")
-	private int SELECT_SUBQUEST_NUM;
-
+	/**
+	 * 메인 퀘스트에 속한 서브 퀘스트 목록 조회
+	 *
+	 * @param attributes 선택된 속성 리스트
+	 * @param mainQuestId 메인 퀘스트 ID
+	 * @param userId 사용자 ID
+	 * @return 추천 서브 퀘스트 목록
+	 */
 	@Override
-	public List<SubQuestResponseDto> getSubQuests(List<Integer> attributes, Long mainQuest, Long userId) {
-		log.info("getSubQuests 호출: mainQuest={}, userId={}, attributes={}", mainQuest, userId, attributes);
+	public List<SubQuestResponseDto> getSubQuests(List<Integer> attributes, Long mainQuestId, Long userId) {
+		log.info("서브 퀘스트 조회 시작 - mainQuestId: {}, userId: {}, attributes: {}",
+			mainQuestId, userId, attributes);
 
-		// TODO: 1. 이미 진행 중인 서브 퀘스트 ID 목록 가져오기
-		List<SubQuestResponseDto> availableSubQuests = getAvailableSubQuests(attributes, mainQuest, userId);
-
-		// 무작위로 섞고, 지정된 개수만 반환
+		List<SubQuestResponseDto> availableSubQuests = getAvailableSubQuests(attributes, mainQuestId, userId);
 		List<SubQuestResponseDto> selectedSubQuests = questUtil.selectRandoms(availableSubQuests, OUTPUT_SUBQUEST_NUM);
 
-		log.info("getSubQuests 완료: 최종 선택된 서브 퀘스트 개수={}, ID={}",
-			selectedSubQuests.size(),
-			selectedSubQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
+		log.info("서브 퀘스트 조회 완료 - 선택된 개수: {}", selectedSubQuests.size());
+		logSubQuestIds("최종 선택된 서브 퀘스트", selectedSubQuests);
 
 		return selectedSubQuests;
 	}
 
+	/**
+	 * 서브 퀘스트 리롤 처리
+	 *
+	 * @param rerollRequest 리롤 요청 정보
+	 * @param userId 사용자 ID
+	 * @return 리롤된 서브 퀘스트 목록
+	 */
 	@Override
-	public List<SubQuestResponseDto> rerollSubQuestRequestDto(RerollSubQuestRequestDto dto, Long userId) {
-		log.info("rerollSubQuests 호출: userId={}, selectedCount={}", userId, dto.selectedSubQuests().size());
+	public List<SubQuestResponseDto> rerollSubQuestRequestDto(RerollSubQuestRequestDto rerollRequest, Long userId) {
+		log.info("서브 퀘스트 리롤 시작 - userId: {}, 기존 선택: {}개",
+			userId, rerollRequest.selectedSubQuests().size());
 
-		validateRerollRequest(dto);
+		validateRerollRequest(rerollRequest);
 
-		int rerollRequiredCount = OUTPUT_SUBQUEST_NUM - dto.selectedSubQuests().size();
-		List<SubQuestResponseDto> availableSubQuests = getAvailableSubQuests(dto.attributes(), dto.mainQuest(), userId);
+		List<SubQuestResponseDto> availableSubQuests = getAvailableSubQuests(
+			rerollRequest.attributes(), rerollRequest.mainQuest(), userId);
 
-		// 선택된 퀘스트 제외
-		List<SubQuestResponseDto> candidateSubQuests = excludeSelectedSubQuests(availableSubQuests, dto.selectedSubQuests());
+		List<SubQuestResponseDto> rerolledSubQuests = rerollProcessor.processReroll(
+			rerollRequest, availableSubQuests, OUTPUT_SUBQUEST_NUM);
 
-		// 우선순위에 따라 퀘스트 선택
-		List<SubQuestResponseDto> finalSelectedSubQuests = selectQuestsWithPriority(
-			candidateSubQuests, dto.gottenSubQuests(), rerollRequiredCount);
+		log.info("서브 퀘스트 리롤 완료 - 선택된 개수: {}", rerolledSubQuests.size());
+		logSubQuestIds("리롤된 서브 퀘스트", rerolledSubQuests);
 
-		log.info("rerollSubQuests 완료: 최종 선택된 서브 퀘스트 개수={}, ID={}",
-			finalSelectedSubQuests.size(),
-			finalSelectedSubQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList()));
-
-		return finalSelectedSubQuests;
+		return rerolledSubQuests;
 	}
 
+	// ==================== Private Methods ====================
+
 	/**
-	 * 사용 가능한 서브 퀘스트 목록을 조회하고 DTO로 변환
+	 * 사용자가 선택 가능한 서브 퀘스트 목록 조회
 	 */
-	private List<SubQuestResponseDto> getAvailableSubQuests(List<Integer> attributes, Long mainQuest, Long userId) {
-		// 속성을 비트마스크로 변환
-		int selectedAttributesBitmask = questUtil.calculateCombinedBitmask(attributes);
-		log.debug("계산된 selectedAttributesBitmask: {}", selectedAttributesBitmask);
+	private List<SubQuestResponseDto> getAvailableSubQuests(List<Integer> attributes, Long mainQuestId, Long userId) {
+		// 1. 조건에 맞는 서브 퀘스트 조회
+		List<MainSubQuest> availableSubQuests = findCandidateSubQuests(attributes, mainQuestId);
 
-		// DB에서 서브 퀘스트 조회
-		List<MainSubQuest> subQuests = mainSubQuestRepository.findAllByMainQuestIdAndAttributes(mainQuest, selectedAttributesBitmask);
-		log.debug("DB 조회 결과 개수: {}, ID: {}",
-			subQuests.size(),
-			subQuests.stream().map(mq -> mq.getSubQuest().getId()).collect(Collectors.toList()));
+		// 2. DTO 변환
+		List<SubQuestResponseDto> subQuestDtos = dtoConverter.convertToResponseDtos(availableSubQuests);
 
-		// TODO: 진행중인 퀘스트 제외 로직 구현
-		List<MainSubQuest> availableSubQuests = subQuests;
-		log.debug("진행중인 퀘스트 제외 후 개수: {}", availableSubQuests.size());
+		log.debug("사용 가능한 서브 퀘스트 조회 완료 - 후보: {}개, 사용 가능: {}개",
+			availableSubQuests.size(), subQuestDtos.size());
 
-		// DTO로 변환
-		List<SubQuestResponseDto> subQuestDtos = availableSubQuests.stream()
-			.map(this::mapToDto)
-			.collect(Collectors.toList());
-
-		log.debug("DTO 변환 완료: 개수={}", subQuestDtos.size());
 		return subQuestDtos;
 	}
 
 	/**
-	 * Reroll 요청 유효성 검증
+	 * 조건에 맞는 후보 서브 퀘스트 조회
 	 */
-	private void validateRerollRequest(RerollSubQuestRequestDto dto) {
-		int selectedCount = dto.selectedSubQuests().size();
-		if (selectedCount >= OUTPUT_SUBQUEST_NUM) {
-			log.warn("잘못된 reroll 요청: 선택된 퀘스트 수가 출력 개수 이상 ({}>={})", selectedCount, OUTPUT_SUBQUEST_NUM);
-			throw new CustomException(ErrorType.INVALID_SUBQUEST_SELECTED);
-		}
-	}
+	private List<MainSubQuest> findCandidateSubQuests(List<Integer> attributes, Long mainQuestId) {
+		int attributesBitmask = questUtil.calculateCombinedBitmask(attributes);
+		List<MainSubQuest> candidates = mainSubQuestRepository.findAllByMainQuestIdAndAttributes(mainQuestId, attributesBitmask);
 
-	/**
-	 * 선택된 서브 퀘스트를 제외한 후보 목록 반환
-	 */
-	private List<SubQuestResponseDto> excludeSelectedSubQuests(List<SubQuestResponseDto> allSubQuests, List<Long> selectedSubQuests) {
-		Set<Long> excludeIds = new HashSet<>(selectedSubQuests);
+		log.debug("후보 서브 퀘스트 조회 완료 - 개수: {}", candidates.size());
+		logMainSubQuestIds("후보 서브 퀘스트", candidates);
 
-		List<SubQuestResponseDto> candidates = allSubQuests.stream()
-			.filter(quest -> !excludeIds.contains(quest.id()))
-			.collect(Collectors.toList());
-
-		log.debug("선택된 퀘스트 제외 후 후보 개수: {}", candidates.size());
 		return candidates;
 	}
 
 	/**
-	 * 우선순위에 따라 퀘스트 선택 (이전에 받지 않은 퀘스트 우선, 부족하면 받은 퀘스트에서 선택)
+	 * 리롤 요청 유효성 검증
 	 */
-	private List<SubQuestResponseDto> selectQuestsWithPriority(
-		List<SubQuestResponseDto> candidates, List<Long> gottenSubQuests, int requiredCount) {
-
-		Set<Long> gottenIds = new HashSet<>(gottenSubQuests);
-
-		// 우선순위 그룹 분리
-		List<SubQuestResponseDto> newQuests = candidates.stream()
-			.filter(quest -> !gottenIds.contains(quest.id()))
-			.collect(Collectors.toList());
-
-		List<SubQuestResponseDto> reusableQuests = candidates.stream()
-			.filter(quest -> gottenIds.contains(quest.id()))
-			.collect(Collectors.toList());
-
-		log.debug("새로운 퀘스트 개수: {}, 재사용 가능한 퀘스트 개수: {}", newQuests.size(), reusableQuests.size());
-
-		List<SubQuestResponseDto> finalSelected = new ArrayList<>();
-
-		// 새로운 퀘스트 우선 선택
-		int newQuestCount = Math.min(newQuests.size(), requiredCount);
-		finalSelected.addAll(questUtil.selectRandoms(newQuests, newQuestCount));
-
-		// 부족한 만큼 재사용 퀘스트에서 선택
-		int remainingCount = requiredCount - newQuestCount;
-		if (remainingCount > 0) {
-			finalSelected.addAll(questUtil.selectRandoms(reusableQuests, remainingCount));
+	private void validateRerollRequest(RerollSubQuestRequestDto dto) {
+		int selectedCount = dto.selectedSubQuests().size();
+		if (selectedCount >= OUTPUT_SUBQUEST_NUM) {
+			log.warn("잘못된 리롤 요청 - 선택된 퀘스트 수: {}, 최대 출력 수: {}", selectedCount, OUTPUT_SUBQUEST_NUM);
+			throw new CustomException(ErrorType.INVALID_SUBQUEST_SELECTED);
 		}
+	}
 
-		return finalSelected;
+	// ==================== Logging Helper Methods ====================
+
+	/**
+	 * 서브 퀘스트 DTO 목록의 ID들을 로깅
+	 */
+	private void logSubQuestIds(String message, List<SubQuestResponseDto> subQuests) {
+		List<Long> ids = subQuests.stream().map(SubQuestResponseDto::id).collect(Collectors.toList());
+		log.debug("{} ID: {}", message, ids);
 	}
 
 	/**
-	 * MainSubQuest 엔티티를 SubQuestResponseDto로 변환
+	 * MainSubQuest 엔티티 목록의 서브 퀘스트 ID들을 로깅
 	 */
-	private SubQuestResponseDto mapToDto(MainSubQuest mainSubQuest) {
+	private void logMainSubQuestIds(String message, List<MainSubQuest> mainSubQuests) {
+		List<Long> ids = mainSubQuests.stream()
+			.map(msq -> msq.getSubQuest().getId())
+			.collect(Collectors.toList());
+		log.debug("{} ID: {}", message, ids);
+	}
+}
+
+/**
+ * 서브 퀘스트 DTO 변환 전용 서비스
+ * 단일 책임 원칙에 따라 변환 로직을 분리
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+class SubQuestDtoConverter {
+
+	/**
+	 * MainSubQuest 엔티티 리스트를 SubQuestResponseDto 리스트로 변환
+	 */
+	public List<SubQuestResponseDto> convertToResponseDtos(List<MainSubQuest> mainSubQuests) {
+		return mainSubQuests.stream()
+			.map(this::convertToResponseDto)
+			.collect(Collectors.toList());
+	}
+
+	/**
+	 * 단일 MainSubQuest 엔티티를 SubQuestResponseDto로 변환
+	 */
+	public SubQuestResponseDto convertToResponseDto(MainSubQuest mainSubQuest) {
 		SubQuest subQuest = mainSubQuest.getSubQuest();
 
 		// 속성 정보 생성
@@ -182,9 +190,10 @@ public class SubQuestServiceImpl implements SubQuestService {
 		String actionUnitTypeUnit = subQuest.getActionUnitType().getUnit();
 		int actionUnitNumValue = subQuest.getActionUnitType().getDefaultCount();
 
-		// 설명 필드 생성 (플레이스홀더 치환)
-		String formattedDesc = String.format(subQuest.getName(), actionUnitNumValue);
-		log.debug("퀘스트 설명 변환: '{}' -> '{}'", subQuest.getName(), formattedDesc);
+		// 설명 생성 (플레이스홀더 치환)
+		String formattedDescription = formatQuestDescription(subQuest.getName(), actionUnitNumValue);
+
+		log.debug("서브 퀘스트 DTO 변환 완료 - id: {}, frequencyType: {}", subQuest.getId(), frequencyType);
 
 		return new SubQuestResponseDto(
 			subQuest.getId(),
@@ -192,7 +201,132 @@ public class SubQuestServiceImpl implements SubQuestService {
 			actionUnitTypeUnit,
 			actionUnitNumValue,
 			attributes,
-			formattedDesc
+			formattedDescription
 		);
 	}
+
+	/**
+	 * 퀘스트 설명에서 플레이스홀더를 실제 값으로 치환
+	 */
+	private String formatQuestDescription(String template, int actionUnitNum) {
+		String formatted = String.format(template, actionUnitNum);
+		log.debug("퀘스트 설명 변환 - '{}' -> '{}'", template, formatted);
+		return formatted;
+	}
+}
+
+/**
+ * 서브 퀘스트 리롤 처리 전용 서비스
+ * 복잡한 리롤 로직을 별도 클래스로 분리하여 가독성 향상
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+class SubQuestRerollProcessor {
+
+	private final QuestUtil questUtil;
+
+	/**
+	 * 서브 퀘스트 리롤 처리
+	 *
+	 * @param rerollRequest 리롤 요청 정보
+	 * @param availableSubQuests 사용 가능한 서브 퀘스트 목록
+	 * @param outputQuestNum 출력할 퀘스트 개수
+	 * @return 리롤된 서브 퀘스트 목록
+	 */
+	public List<SubQuestResponseDto> processReroll(RerollSubQuestRequestDto rerollRequest,
+		List<SubQuestResponseDto> availableSubQuests,
+		int outputQuestNum) {
+		int rerollRequiredCount = outputQuestNum - rerollRequest.selectedSubQuests().size();
+
+		// 기존 선택된 퀘스트 제외
+		List<SubQuestResponseDto> candidateSubQuests = excludeSelectedSubQuests(
+			availableSubQuests, rerollRequest.selectedSubQuests());
+
+		// 우선순위 기반 퀘스트 선택
+		return selectQuestsWithPriority(candidateSubQuests, rerollRequest.gottenSubQuests(), rerollRequiredCount);
+	}
+
+	/**
+	 * 이미 선택된 서브 퀘스트를 후보 목록에서 제외
+	 */
+	private List<SubQuestResponseDto> excludeSelectedSubQuests(List<SubQuestResponseDto> allSubQuests,
+		List<Long> selectedSubQuests) {
+		Set<Long> excludeIds = Set.copyOf(selectedSubQuests);
+
+		List<SubQuestResponseDto> candidates = questUtil.filterExcluding(
+			allSubQuests, excludeIds, SubQuestResponseDto::id);
+
+		log.debug("선택된 퀘스트 제외 완료 - 전체: {}개, 제외: {}개, 후보: {}개",
+			allSubQuests.size(), excludeIds.size(), candidates.size());
+
+		return candidates;
+	}
+
+	/**
+	 * 우선순위 기반 퀘스트 선택
+	 * 1순위: 새로운 퀘스트 (이전에 받지 않은 퀘스트)
+	 * 2순위: 재사용 가능한 퀘스트 (이전에 받았던 퀘스트)
+	 */
+	private List<SubQuestResponseDto> selectQuestsWithPriority(List<SubQuestResponseDto> candidates,
+		List<Long> gottenSubQuests,
+		int requiredCount) {
+		QuestPriorityGroups groups = categorizeQuestsByPriority(candidates, gottenSubQuests);
+
+		log.debug("우선순위별 퀘스트 분류 - 새로운: {}개, 재사용 가능: {}개",
+			groups.newQuests().size(), groups.reusableQuests().size());
+
+		return selectFromPriorityGroups(groups, requiredCount);
+	}
+
+	/**
+	 * 후보 퀘스트를 우선순위별로 분류
+	 */
+	private QuestPriorityGroups categorizeQuestsByPriority(List<SubQuestResponseDto> candidates,
+		List<Long> gottenSubQuests) {
+		Set<Long> gottenIds = Set.copyOf(gottenSubQuests);
+
+		List<SubQuestResponseDto> newQuests = candidates.stream()
+			.filter(quest -> !gottenIds.contains(quest.id()))
+			.collect(Collectors.toList());
+
+		List<SubQuestResponseDto> reusableQuests = candidates.stream()
+			.filter(quest -> gottenIds.contains(quest.id()))
+			.collect(Collectors.toList());
+
+		return new QuestPriorityGroups(newQuests, reusableQuests);
+	}
+
+	/**
+	 * 우선순위 그룹에서 필요한 개수만큼 선택
+	 */
+	private List<SubQuestResponseDto> selectFromPriorityGroups(QuestPriorityGroups groups, int requiredCount) {
+		List<SubQuestResponseDto> selectedQuests = new ArrayList<>();
+
+		// 1순위: 새로운 퀘스트에서 우선 선택
+		int newQuestCount = Math.min(groups.newQuests().size(), requiredCount);
+		selectedQuests.addAll(questUtil.selectRandoms(groups.newQuests(), newQuestCount));
+
+		// 2순위: 부족한 만큼 재사용 퀘스트에서 선택
+		int remainingCount = requiredCount - newQuestCount;
+		if (remainingCount > 0) {
+			selectedQuests.addAll(questUtil.selectRandoms(groups.reusableQuests(), remainingCount));
+		}
+
+		log.debug("우선순위 기반 선택 완료 - 새로운: {}개, 재사용: {}개",
+			newQuestCount, remainingCount);
+
+		return selectedQuests;
+	}
+
+	/**
+	 * 우선순위별 퀘스트 그룹을 담는 레코드
+	 *
+	 * @param newQuests 새로운 퀘스트 목록 (이전에 받지 않은 퀘스트)
+	 * @param reusableQuests 재사용 가능한 퀘스트 목록 (이전에 받았던 퀘스트)
+	 */
+	private record QuestPriorityGroups(
+		List<SubQuestResponseDto> newQuests,
+		List<SubQuestResponseDto> reusableQuests
+	) {}
 }
