@@ -1,6 +1,5 @@
 package com.statoverflow.status.domain.quest.service;
 
-import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -34,6 +33,15 @@ import com.statoverflow.status.global.exception.CustomException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 사용자 서브 퀘스트 관리 서비스
+ *
+ * 주요 기능:
+ * - 서브 퀘스트 조회 및 완료 처리
+ * - 퀘스트 히스토리 관리
+ * - 완료 조건 검증 및 보상 지급
+ * - 메인 퀘스트 완료 상태 확인
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -44,393 +52,568 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	private final UsersSubQuestLogRepository usersSubQuestLogRepository;
 	private final AttributeService attributeService;
 
-
+	/**
+	 * 사용자의 모든 오늘 할 수 있는 서브 퀘스트를 조회합니다.
+	 *
+	 * @param userId 사용자 ID
+	 * @return 오늘 수행 가능한 서브 퀘스트 목록
+	 */
 	@Override
-	public List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long id) {
-
-		// 오늘 완료 가능한 서브 퀘스트 리스트 가져오기
-		List<UsersSubQuest> questList = usersSubQuestRepository.findByUsersIdAndStatus(id, QuestStatus.ACTIVE);
-
-		// 2. 각 서브 퀘스트가 오늘 수행되어야 하는지 판단하고 DTO로 매핑
-		return questList.stream()
-			.map(this::mapToUsersSubQuestResponseDto) // DTO로 매핑
-			.collect(Collectors.toList());
+	public List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long userId) {
+		List<UsersSubQuest> activeSubQuests = findActiveSubQuests(userId);
+		return convertToSubQuestResponseDtos(activeSubQuests);
 	}
 
+	/**
+	 * 특정 메인 퀘스트의 오늘 할 수 있는 서브 퀘스트를 조회합니다.
+	 *
+	 * @param userId 사용자 ID
+	 * @param mainQuestId 메인 퀘스트 ID
+	 * @return 해당 메인 퀘스트의 오늘 수행 가능한 서브 퀘스트 목록
+	 */
 	@Override
 	public List<SubQuestResponseDto.UsersSubQuestResponseDto> getTodaySubQuests(Long userId, Long mainQuestId) {
-		List<UsersSubQuest> questList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatus(userId, mainQuestId,
-			QuestStatus.ACTIVE);
-
-		// 2. 각 서브 퀘스트가 오늘 수행되어야 하는지 판단하고 DTO로 매핑
-		return questList.stream()
-			.map(this::mapToUsersSubQuestResponseDto) // DTO로 매핑
-			.collect(Collectors.toList());
+		List<UsersSubQuest> activeSubQuests = findActiveSubQuestsByMainQuest(userId, mainQuestId);
+		return convertToSubQuestResponseDtos(activeSubQuests);
 	}
 
+	/**
+	 * 특정 메인 퀘스트의 서브 퀘스트 히스토리를 날짜별로 조회합니다.
+	 *
+	 * @param userId 사용자 ID
+	 * @param mainQuestId 메인 퀘스트 ID
+	 * @return 날짜별 퀘스트 히스토리
+	 */
 	@Override
 	public List<QuestHistoryByDateDto> getSubQuestsLogs(Long userId, Long mainQuestId) {
+		// TODO: mainQuestId 소유권 검증 로직 추가 필요
 
-		// todo: mainQuestId에 대한 검증 작업 (예: usersMainQuestRepository를 통해 해당 mainQuestId가 userId에 속하는지 확인)
+		List<UsersSubQuest> subQuests = findSubQuestsWithHistory(userId, mainQuestId);
+		List<UsersSubQuestLog> allLogs = collectAllSubQuestLogs(subQuests);
 
-		// 1. 메인 퀘스트 내 활성/주간 완료 상태의 서브 퀘스트 리스트를 가져옵니다.
-		List<UsersSubQuest> subQuestList = usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(
-			userId, mainQuestId, Arrays.asList(QuestStatus.ACTIVE, QuestStatus.ACCOMPLISHED, QuestStatus.WEEKLY_ACCOMPLISHED, QuestStatus.COMPLETED));
-
-		log.debug("조회된 subQuestList: {}", subQuestList);
-		// 2. 각 서브 퀘스트에 대한 모든 로그를 가져옵니다.
-		// 성능 최적화를 위해, 특정 기간 내의 로그만 가져오거나,
-		// subQuestList의 ID를 모아서 UsersSubQuestLogRepository에서 IN 쿼리로 한 번에 가져오는 것을 고려해볼 수 있습니다.
-		// List<Long> subQuestIds = subQuestList.stream().map(UsersSubQuest::getId).collect(Collectors.toList());
-		// List<UsersSubQuestLog> allLogs = usersSubQuestLogRepository.findByUsersSubQuestIdIn(subQuestIds);
-		List<UsersSubQuestLog> allLogs = new ArrayList<>();
-		subQuestList.forEach(subQuest -> {
-			// 이 findByUsersSubQuest 메서드가 UsersSubQuestLogRepository에 정의되어 있어야 합니다.
-			// 또는 findByUsersSubQuestId(subQuest.getId()) 사용.
-			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(subQuest.getId());
-			log.debug("logs: {}, logs.size(): {}", logs, logs.size());
-			allLogs.addAll(logs);
-		});
-
-		log.debug("allLogs: {}, allLogs.size(): {}", allLogs, allLogs.size());
-
-		// 3. logsList를 로그 기록 날짜(LocalDate)별로 그룹화합니다.
-		Map<LocalDate, List<UsersSubQuestLog>> groupedLogs = allLogs.stream()
-			.collect(Collectors.groupingBy(log -> log.getCreatedAt().toLocalDate()));
-
-
-		// 4. 그룹화된 로그를 QuestHistoryByDateDto 리스트로 변환합니다.
-		List<QuestHistoryByDateDto> result = groupedLogs.entrySet().stream()
-			.map(entry -> {
-				LocalDate logDate = entry.getKey(); // 로그가 기록된 날짜
-				List<UsersSubQuestLog> dailyLogs = entry.getValue(); // 해당 날짜의 모든 로그 엔티티
-
-				// 해당 날짜의 각 UsersSubQuestLog를 SubQuestLogsResponseDto로 변환합니다.
-				List<QuestHistoryByDateDto.SubQuestLogsResponseDto> dailyHistoryLogs = dailyLogs.stream()
-					.map(logEntry -> {
-						// UsersSubQuestLog 엔티티에서 필요한 정보 추출
-						UsersSubQuest usersSubQuest = logEntry.getUsersSubQuest(); // UsersSubQuestLog에 UsersSubQuest 참조가 있어야 함
-
-						// 2. log 부분 (SubQuestLog 내부 레코드) 생성
-						// UsersSubQuestLog 엔티티에서 difficulty, memo, id를 추출
-						SubQuestLogDto subQuestLogDto =
-							new SubQuestLogDto(
-								logEntry.getId(),
-								logEntry.getDifficulty(), // UsersSubQuestLog 엔티티에 getDifficulty() 필요
-								logEntry.getMemo()       // UsersSubQuestLog 엔티티에 getMemo() 필요
-							);
-
-						// 최종 SubQuestLogsResponseDto 생성
-						return new QuestHistoryByDateDto.SubQuestLogsResponseDto(mapToUsersSubQuestResponseDto(usersSubQuest), subQuestLogDto);
-					})
-					.collect(Collectors.toList());
-
-				// QuestHistoryByDateDto 생성
-				return new QuestHistoryByDateDto(logDate, dailyHistoryLogs);
-			})
-			.sorted(Comparator.comparing(QuestHistoryByDateDto::date).reversed()) // 최신 날짜부터 정렬
-			.collect(Collectors.toList());
-
-		return result;
+		return groupLogsByDate(allLogs);
 	}
 
+	/**
+	 * 서브 퀘스트를 완료하고 보상을 지급합니다.
+	 *
+	 * @param userId 사용자 ID
+	 * @param logDto 퀘스트 완료 로그 정보
+	 * @return 지급된 보상 정보
+	 */
 	@Override
-	public RewardResponseDto doSubQuest(Long userId, SubQuestLogDto dto) {
-		log.debug("유저 id: {}, userSubQuestId: {}", userId, dto.id());
-		UsersSubQuest usq = usersSubQuestRepository.findByIdAndUsersIdAndStatus(dto.id(), userId, QuestStatus.ACTIVE)
+	public RewardResponseDto doSubQuest(Long userId, SubQuestLogDto logDto) {
+		log.debug("서브 퀘스트 완료 처리 시작 - userId: {}, subQuestId: {}", userId, logDto.id());
+
+		// 1. 서브 퀘스트 조회 및 검증
+		UsersSubQuest subQuest = findActiveSubQuestForCompletion(userId, logDto.id());
+
+		// 2. 완료 로그 생성
+		createSubQuestLog(subQuest, logDto);
+
+		// 3. 서브 퀘스트 보상 지급
+		List<AttributeDto> subQuestRewards = grantSubQuestRewards(subQuest);
+
+		// 4. 서브 퀘스트 상태 업데이트
+		updateSubQuestStatus(subQuest);
+
+		// 5. 메인 퀘스트 완료 여부 확인 및 보상 지급
+		MainQuestCompletionResult mainQuestResult = checkAndCompleteMainQuest(subQuest.getMainQuest());
+
+		return new RewardResponseDto(subQuestRewards, mainQuestResult.rewards(), mainQuestResult.completed());
+	}
+
+	/**
+	 * 서브 퀘스트 로그를 수정합니다.
+	 *
+	 * @param userId 사용자 ID
+	 * @param logDto 수정할 로그 정보
+	 * @return 수정된 로그 정보
+	 */
+	@Override
+	public SubQuestLogDto editSubQuest(Long userId, SubQuestLogDto logDto) {
+		UsersSubQuestLog log = findSubQuestLogById(logDto.id());
+		updateSubQuestLog(log, logDto);
+
+		return new SubQuestLogDto(log.getId(), log.getDifficulty(), log.getMemo());
+	}
+
+	// ==================== Private Helper Methods ====================
+
+	/**
+	 * 사용자의 활성 서브 퀘스트를 조회합니다.
+	 */
+	private List<UsersSubQuest> findActiveSubQuests(Long userId) {
+		return usersSubQuestRepository.findByUsersIdAndStatus(userId, QuestStatus.ACTIVE);
+	}
+
+	/**
+	 * 특정 메인 퀘스트의 활성 서브 퀘스트를 조회합니다.
+	 */
+	private List<UsersSubQuest> findActiveSubQuestsByMainQuest(Long userId, Long mainQuestId) {
+		return usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatus(userId, mainQuestId, QuestStatus.ACTIVE);
+	}
+
+	/**
+	 * 히스토리 조회용 서브 퀘스트를 조회합니다.
+	 */
+	private List<UsersSubQuest> findSubQuestsWithHistory(Long userId, Long mainQuestId) {
+		List<QuestStatus> statusList = Arrays.asList(
+			QuestStatus.ACTIVE, QuestStatus.ACCOMPLISHED,
+			QuestStatus.WEEKLY_ACCOMPLISHED, QuestStatus.COMPLETED
+		);
+		return usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(userId, mainQuestId, statusList);
+	}
+
+	/**
+	 * 완료 가능한 활성 서브 퀘스트를 조회합니다.
+	 */
+	private UsersSubQuest findActiveSubQuestForCompletion(Long userId, Long subQuestId) {
+		return usersSubQuestRepository.findByIdAndUsersIdAndStatus(subQuestId, userId, QuestStatus.ACTIVE)
 			.orElseThrow(() -> new CustomException(ErrorType.COMPLETED_SUBQUEST));
-		log.debug("유저 서브퀘스트 정보: {}", usq.toString());
-
-		UsersSubQuestLog usql = UsersSubQuestLog.builder()
-			.usersSubQuest(usq)
-			.difficulty(dto.difficulty())
-			.memo(dto.memo())
-			.build();
-
-		usersSubQuestLogRepository.save(usql);
-
-		attributeService.addExp(usq.getUsers(), AttributeDto.fromUsersSubQuest(usq), SourceType.SUBQUESTLOG);
-		// 서브퀘스트 상태 완료 처리
-		setStatus(usq);
-
-		// 메인퀘스트 완료 여부 체크
-		Boolean isMainQuestCompleted = checkMainQuestCompleted(usq.getMainQuest());
-
-		List<AttributeDto> mainQuestRewards = new ArrayList<>();
-		if(isMainQuestCompleted) {
-			mainQuestRewards = AttributeDto.fromUsersMainQuest(usq.getMainQuest());
-			usq.getMainQuest().setStatus(QuestStatus.ACCOMPLISHED);
-			attributeService.addExp(usq.getUsers(), mainQuestRewards, SourceType.MAINQUEST);
-		}
-
-		return new RewardResponseDto(AttributeDto.fromUsersSubQuest(usq), mainQuestRewards, isMainQuestCompleted);
 	}
 
-	protected boolean checkMainQuestCompleted(UsersMainQuest mainQuest) {
-		log.info("메인 퀘스트({} - {}) 완료 여부 확인 시작. 기간: {} ~ {}",
-			mainQuest.getId(), mainQuest.getTitle(), mainQuest.getStartDate(), mainQuest.getEndDate());
-
-		boolean allSubQuestsCompleted = true;
-
-		for (UsersSubQuest usersSubQuest : mainQuest.getUsersSubQuests()) {
-			boolean subQuestCompleted = false;
-
-			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(usersSubQuest.getId());
-			int cnt = logs.size();
-			LocalDate startDate = mainQuest.getStartDate();
-			LocalDate endDate = mainQuest.getEndDate();
-
-			log.debug("  -> 서브 퀘스트({} - {}) 확인 시작. 타입: {}",
-				usersSubQuest.getId(), usersSubQuest.getDescription(), usersSubQuest.getFrequencyType());
-
-			switch (usersSubQuest.getFrequencyType()) {
-				case DAILY:
-					long requiredDays = ChronoUnit.DAYS.between(startDate, endDate) + 1;
-					subQuestCompleted = (long) cnt == requiredDays;
-					log.debug("    [DAILY] 필수 일수: {}, 실제 로그 수: {}. 완료 여부: {}",
-						requiredDays, cnt, subQuestCompleted);
-
-					break;
-
-				case WEEKLY_1:
-				case WEEKLY_2:
-				case WEEKLY_3:
-				case WEEKLY_4:
-				case WEEKLY_5:
-				case WEEKLY_6:
-					if(usersSubQuest.getStatus() != QuestStatus.WEEKLY_ACCOMPLISHED) break;
-					int requiredCntPerWeek = usersSubQuest.getFrequencyType().getCnt();
-					LocalDate currentWeekStart = startDate;
-					subQuestCompleted = true;
-
-					while (!currentWeekStart.isAfter(endDate)) {
-						LocalDate currentWeekEnd = currentWeekStart.plusDays(6);
-						if (currentWeekEnd.isAfter(endDate)) {
-							currentWeekEnd = endDate;
-						}
-
-						LocalDate finalCurrentWeekStart = currentWeekStart;
-						LocalDate finalCurrentWeekEnd = currentWeekEnd;
-						long logsInThisWeek = logs.stream()
-							.filter(log -> !log.getCreatedAt().isBefore(finalCurrentWeekStart.atStartOfDay()) && !log.getCreatedAt().isAfter(
-								finalCurrentWeekEnd.atStartOfDay()))
-							.count();
-
-						if (logsInThisWeek < requiredCntPerWeek) {
-							log.debug("    [WEEKLY] 실패! {} ~ {} 기간 동안 필수 로그 수: {}, 실제 로그 수: {}",
-								finalCurrentWeekStart, finalCurrentWeekEnd, requiredCntPerWeek, logsInThisWeek);
-							subQuestCompleted = false;
-							break;
-						} else {
-							log.debug("    [WEEKLY] 성공. {} ~ {} 기간 동안 필수 로그 수: {}, 실제 로그 수: {}",
-								finalCurrentWeekStart, finalCurrentWeekEnd, requiredCntPerWeek, logsInThisWeek);
-						}
-
-						currentWeekStart = currentWeekStart.plusWeeks(1);
-					}
-					break;
-
-				case MONTHLY_1:
-				case MONTHLY_2:
-				case MONTHLY_3:
-				case MONTHLY_4:
-					int requiredCntForDuration = usersSubQuest.getFrequencyType().getCnt();
-					subQuestCompleted = cnt >= requiredCntForDuration;
-					log.debug("    [MONTHLY] 필수 로그 수: {}, 실제 로그 수: {}. 완료 여부: {}",
-						requiredCntForDuration, cnt, subQuestCompleted);
-					break;
-			}
-
-			if (!subQuestCompleted) {
-				log.info("  -> 서브 퀘스트({} - {}) 실패. 메인 퀘스트 완료 실패 처리.",
-					usersSubQuest.getId(), usersSubQuest.getDescription());
-				allSubQuestsCompleted = false;
-				break;
-			} else {
-				log.debug("  -> 서브 퀘스트({} - {}) 완료.",
-					usersSubQuest.getId(), usersSubQuest.getDescription());
-				usersSubQuest.setStatus(QuestStatus.COMPLETED);
-			}
-		}
-
-		if (allSubQuestsCompleted) {
-			log.debug("✔ 메인 퀘스트({} - {}) 최종 완료.",
-				mainQuest.getId(), mainQuest.getTitle());
-			return true;
-			// todo: 메인 퀘스트 경험치 주기 + status 설정
-		} else {
-			log.info("❌ 메인 퀘스트({} - {}) 최종 완료 실패.",
-				mainQuest.getId(), mainQuest.getTitle());
-			return false;
-		}
+	/**
+	 * 서브 퀘스트 로그를 ID로 조회합니다.
+	 */
+	private UsersSubQuestLog findSubQuestLogById(Long logId) {
+		return usersSubQuestLogRepository.findById(logId)
+			.orElseThrow(() -> new CustomException(ErrorType.SUBQUESTLOG_NOT_FOUND));
 	}
 
-	@Override
-	public SubQuestLogDto editSubQuest(Long userId, SubQuestLogDto dto) {
-		UsersSubQuestLog usql = usersSubQuestLogRepository.findById(dto.id()).orElseThrow();
-		if(dto.difficulty() != null) usql.setDifficulty(dto.difficulty());
-		if(dto.memo() != null) usql.setMemo(dto.memo());
-		return new SubQuestLogDto(usql.getId(), usql.getDifficulty(), usql.getMemo());
+	/**
+	 * 서브 퀘스트 목록을 응답 DTO로 변환합니다.
+	 */
+	private List<SubQuestResponseDto.UsersSubQuestResponseDto> convertToSubQuestResponseDtos(List<UsersSubQuest> subQuests) {
+		return subQuests.stream()
+			.map(this::convertToUsersSubQuestResponseDto)
+			.collect(Collectors.toList());
 	}
 
-	private SubQuestResponseDto.UsersSubQuestResponseDto mapToUsersSubQuestResponseDto(UsersSubQuest usersSubQuest) {
-
-		SubQuestResponseDto subQuestInfo = mapToSubQuestResponseDto(usersSubQuest);
-
-		RepeatAndEssential rae = repeatCntAndEssential(usersSubQuest);
-
-		int repeatCnt = rae.repeatCnt;
-		boolean essential = rae.essential;
+	/**
+	 * 단일 서브 퀘스트를 응답 DTO로 변환합니다.
+	 */
+	private SubQuestResponseDto.UsersSubQuestResponseDto convertToUsersSubQuestResponseDto(UsersSubQuest subQuest) {
+		SubQuestResponseDto baseDto = convertToSubQuestResponseDto(subQuest);
+		QuestProgressInfo progressInfo = calculateQuestProgressInfo(subQuest);
 
 		return new SubQuestResponseDto.UsersSubQuestResponseDto(
-			usersSubQuest.getMainQuest().getId(),
-			subQuestInfo,
-			repeatCnt,
-			essential
+			subQuest.getMainQuest().getId(),
+			baseDto,
+			progressInfo.repeatCount(),
+			progressInfo.essential()
 		);
 	}
 
-	private SubQuestResponseDto mapToSubQuestResponseDto(UsersSubQuest usersSubQuest) {
-
-		// 설명 필드 생성 (플레이스홀더 치환)
-		String formattedDesc = String.format(usersSubQuest.getDescription(), usersSubQuest.getActionUnitNum());
-		log.debug("퀘스트 설명 변환: '{}' -> '{}'", usersSubQuest.getDescription(), formattedDesc);
-
+	/**
+	 * 기본 서브 퀘스트 정보를 DTO로 변환합니다.
+	 */
+	private SubQuestResponseDto convertToSubQuestResponseDto(UsersSubQuest subQuest) {
+		List<AttributeDto> attributes = AttributeDto.fromUsersSubQuest(subQuest);
 
 		return new SubQuestResponseDto(
-			usersSubQuest.getId(),
-			usersSubQuest.getFrequencyType(),
-			usersSubQuest.getActionUnitType().getUnit(),
-			usersSubQuest.getActionUnitNum(),
-			AttributeDto.fromUsersSubQuest(usersSubQuest),
-			formattedDesc
+			subQuest.getId(),
+			subQuest.getFrequencyType(),
+			subQuest.getActionUnitType().getUnit(),
+			subQuest.getActionUnitNum(),
+			attributes,
+			subQuest.getDescription()
 		);
 	}
 
-	private record RepeatAndEssential(int repeatCnt, boolean essential) {}
+	/**
+	 * 모든 서브 퀘스트의 로그를 수집합니다.
+	 */
+	private List<UsersSubQuestLog> collectAllSubQuestLogs(List<UsersSubQuest> subQuests) {
+		List<UsersSubQuestLog> allLogs = new ArrayList<>();
 
-	private RepeatAndEssential repeatCntAndEssential(UsersSubQuest usersSubQuest) {
+		for (UsersSubQuest subQuest : subQuests) {
+			List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(subQuest.getId());
+			log.debug("서브 퀘스트 {} 로그 수: {}", subQuest.getId(), logs.size());
+			allLogs.addAll(logs);
+		}
 
-		LocalDate today = LocalDate.now();
-		FrequencyType frequencyType = usersSubQuest.getFrequencyType();
+		log.debug("전체 수집된 로그 수: {}", allLogs.size());
+		return allLogs;
+	}
 
-		log.info("--- 서브 퀘스트 ID: {}, 타입: {} 에 대한 RepeatAndEssential 계산 시작 ---", usersSubQuest.getId(), frequencyType);
-		log.info("오늘 날짜: {}", today);
+	/**
+	 * 로그를 날짜별로 그룹화하여 히스토리 DTO를 생성합니다.
+	 */
+	private List<QuestHistoryByDateDto> groupLogsByDate(List<UsersSubQuestLog> logs) {
+		Map<LocalDate, List<UsersSubQuestLog>> groupedLogs = logs.stream()
+			.collect(Collectors.groupingBy(log -> log.getCreatedAt().toLocalDate()));
 
+		return groupedLogs.entrySet().stream()
+			.map(this::convertToHistoryDto)
+			.sorted(Comparator.comparing(QuestHistoryByDateDto::date).reversed())
+			.collect(Collectors.toList());
+	}
 
-		switch (usersSubQuest.getFrequencyType()) {
-			case DAILY:
-				log.info("일간 퀘스트 - 로그 조회 시작 날짜: {}", today);
-				int logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
-					today.atStartOfDay());
-				log.info("일간 퀘스트 - 오늘 완료된 로그 수: {}", logCnt);
+	/**
+	 * 날짜별 로그 그룹을 히스토리 DTO로 변환합니다.
+	 */
+	private QuestHistoryByDateDto convertToHistoryDto(Map.Entry<LocalDate, List<UsersSubQuestLog>> entry) {
+		LocalDate date = entry.getKey();
+		List<UsersSubQuestLog> dailyLogs = entry.getValue();
 
-				return new RepeatAndEssential(FrequencyType.DAILY.getPer() - logCnt, logCnt == 0);
+		List<QuestHistoryByDateDto.SubQuestLogsResponseDto> dailyHistoryLogs = dailyLogs.stream()
+			.map(this::convertToSubQuestLogResponseDto)
+			.collect(Collectors.toList());
 
-			case WEEKLY_1:
-			case WEEKLY_2:
-			case WEEKLY_3:
-			case WEEKLY_4:
-			case WEEKLY_5:
-			case WEEKLY_6:
+		return new QuestHistoryByDateDto(date, dailyHistoryLogs);
+	}
 
-				// 1. 현재 주차의 시작일을 구합니다.
-				LocalDate mainQuestStartDate = usersSubQuest.getMainQuest().getStartDate();
-				long daysSinceMainQuestStart = ChronoUnit.DAYS.between(mainQuestStartDate, today);
-				long currentWeekOffset = (daysSinceMainQuestStart / 7) * 7;
-				LocalDate currentWeekStartDate = mainQuestStartDate.plusDays(currentWeekOffset);
+	/**
+	 * 서브 퀘스트 로그를 응답 DTO로 변환합니다.
+	 */
+	private QuestHistoryByDateDto.SubQuestLogsResponseDto convertToSubQuestLogResponseDto(UsersSubQuestLog log) {
+		UsersSubQuest subQuest = log.getUsersSubQuest();
+		SubQuestResponseDto.UsersSubQuestResponseDto subQuestDto = convertToUsersSubQuestResponseDto(subQuest);
+		SubQuestLogDto logDto = new SubQuestLogDto(log.getId(), log.getDifficulty(), log.getMemo());
 
-				log.info("주간 퀘스트 - 메인 퀘스트 시작일: {}", mainQuestStartDate);
-				log.info("주간 퀘스트 - 메인 퀘스트 시작일로부터 오늘까지의 총 일수: {}", daysSinceMainQuestStart);
-				log.info("주간 퀘스트 - 현재 주차 시작일 (계산): {}", currentWeekStartDate);
+		return new QuestHistoryByDateDto.SubQuestLogsResponseDto(subQuestDto, logDto);
+	}
 
+	/**
+	 * 서브 퀘스트 완료 로그를 생성합니다.
+	 */
+	private void createSubQuestLog(UsersSubQuest subQuest, SubQuestLogDto logDto) {
+		UsersSubQuestLog subQuestLog = UsersSubQuestLog.builder()
+			.usersSubQuest(subQuest)
+			.difficulty(logDto.difficulty())
+			.memo(logDto.memo())
+			.build();
 
-				// 2. 현재 주차의 마지막 날 (7일차)을 구합니다.
-				LocalDate currentWeekEndDate = currentWeekStartDate.plusDays(6); // 7일 주기이므로 시작일 + 6일
-				log.info("주간 퀘스트 - 현재 주차 종료일 (계산): {}", currentWeekEndDate);
+		usersSubQuestLogRepository.save(subQuestLog);
+		log.debug("서브 퀘스트 로그 생성 완료 - subQuestId: {}", subQuest.getId());
 
-				// 3. 오늘 날짜가 현재 주차의 마지막 날부터 며칠 떨어져 있는지 계산합니다.
-				//    (여기서 '1'은 마지막 날짜 자신을 포함하는 의미입니다.)
-				long daysFromEndOfCurrentWeek = ChronoUnit.DAYS.between(today, currentWeekEndDate) + 1;
-				log.info("주간 퀘스트 - 현재 주차 종료일까지 남은 일수 (종료일 포함): {}", daysFromEndOfCurrentWeek);
+	}
 
-				log.info("주간 퀘스트 - 로그 조회 시작 날짜: {}", currentWeekStartDate);
+	/**
+	 * 서브 퀘스트 보상을 지급합니다.
+	 */
+	private List<AttributeDto> grantSubQuestRewards(UsersSubQuest subQuest) {
+		List<AttributeDto> rewards = AttributeDto.fromUsersSubQuest(subQuest);
+		attributeService.addExp(subQuest.getUsers(), rewards, SourceType.SUBQUESTLOG);
+		log.debug("서브 퀘스트 보상 지급 완료 - subQuestId: {}, rewards: {}", subQuest.getId(), rewards.size());
+		return rewards;
+	}
 
-				logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
-					currentWeekStartDate.atStartOfDay());
-				log.info("주간 퀘스트 - 현재 주차 내 완료된 로그 수: {}", logCnt);
-
-				int cnt = (usersSubQuest.getFrequencyType().getCnt() - logCnt);
-
-				return new RepeatAndEssential(cnt, daysFromEndOfCurrentWeek - cnt <= 0);
-
-			case MONTHLY_1:
-			case MONTHLY_2:
-			case MONTHLY_3:
-			case MONTHLY_4:
-
-				logCnt = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(usersSubQuest.getId(),
-					usersSubQuest.getMainQuest()
-						.getStartDate().atStartOfDay());
-				log.info("월간 퀘스트 - 현재 월 내 완료된 로그 수: {}", logCnt);
-
-
-				LocalDate endDate = usersSubQuest.getMainQuest().getEndDate();
-				Long daysFromEndDate = ChronoUnit.DAYS.between(today, endDate) + 1;
-
-
-				cnt = (usersSubQuest.getFrequencyType().getCnt() - logCnt);
-
-				return new RepeatAndEssential(cnt, daysFromEndDate - cnt <= 0);
-
-			default:
-				return new RepeatAndEssential(0, false);
+	/**
+	 * 서브 퀘스트 로그를 수정합니다.
+	 */
+	private void updateSubQuestLog(UsersSubQuestLog log, SubQuestLogDto dto) {
+		if (dto.difficulty() != null) {
+			log.setDifficulty(dto.difficulty());
+		}
+		if (dto.memo() != null) {
+			log.setMemo(dto.memo());
 		}
 	}
 
-	// 서브 퀘스트 로그에 따른 퀘스트 완료 상황
-	private void setStatus(UsersSubQuest usq) {
-		FrequencyType type = usq.getFrequencyType();
-		List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(usq.getId());
-		switch (type) {
-			case WEEKLY_1:
-			case WEEKLY_2:
-			case WEEKLY_3:
-			case WEEKLY_4:
-			case WEEKLY_5:
-			case WEEKLY_6:
-				// 주간 퀘스트 처리
-				long requiredCount = type.getCnt();
+	// ==================== Quest Progress Calculation ====================
 
-				// 이번 주 로그만 필터링
-				LocalDate mainQuestStartDate = usq.getMainQuest().getStartDate();
-				long daysSinceMainQuestStart = ChronoUnit.DAYS.between(mainQuestStartDate, LocalDate.now());
-				long currentWeekOffset = (daysSinceMainQuestStart / 7) * 7;
-				LocalDate currentWeekStartDate = mainQuestStartDate.plusDays(currentWeekOffset);
+	/**
+	 * 퀘스트 진행률 정보를 계산합니다.
+	 */
+	private QuestProgressInfo calculateQuestProgressInfo(UsersSubQuest subQuest) {
+		LocalDate today = LocalDate.now();
+		FrequencyType frequencyType = subQuest.getFrequencyType();
 
-				log.info("주간 퀘스트 - 메인 퀘스트 시작일: {}", mainQuestStartDate);
-				log.info("주간 퀘스트 - 메인 퀘스트 시작일로부터 오늘까지의 총 일수: {}", daysSinceMainQuestStart);
-				log.info("주간 퀘스트 - 현재 주차 시작일 (계산): {}", currentWeekStartDate);
+		log.debug("퀘스트 진행률 계산 시작 - subQuestId: {}, frequencyType: {}, today: {}",
+			subQuest.getId(), frequencyType, today);
 
-				// 3. 오늘 날짜가 현재 주차의 마지막 날부터 며칠 떨어져 있는지 계산합니다.
-				long weeklyLogCount = logs.stream()
-					.filter(log -> !log.getCreatedAt().isBefore(currentWeekStartDate.atStartOfDay()))
-					.count();
+		return switch (frequencyType) {
+			case DAILY -> calculateDailyProgress(subQuest, today);
+			case WEEKLY_1, WEEKLY_2, WEEKLY_3, WEEKLY_4, WEEKLY_5, WEEKLY_6 ->
+				calculateWeeklyProgress(subQuest, today);
+			case MONTHLY_1, MONTHLY_2, MONTHLY_3, MONTHLY_4 ->
+				calculateMonthlyProgress(subQuest, today);
+			default -> new QuestProgressInfo(0, false);
+		};
+	}
 
-				log.debug("주 내 서브퀘스트 완료 횟수: {}", weeklyLogCount);
+	/**
+	 * 일간 퀘스트 진행률을 계산합니다.
+	 */
+	private QuestProgressInfo calculateDailyProgress(UsersSubQuest subQuest, LocalDate today) {
+		int todayLogCount = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(
+			subQuest.getId(), today.atStartOfDay());
 
-				if (weeklyLogCount >= requiredCount) {
-					usq.setStatus(QuestStatus.WEEKLY_ACCOMPLISHED);
-				} else {
-					// 요구 횟수 미만이면 COMPLETED로 처리
-					usq.setStatus(QuestStatus.ACCOMPLISHED);
-				}
-				break;
+		int remainingCount = FrequencyType.DAILY.getPer() - todayLogCount;
+		boolean isEssential = todayLogCount == 0;
 
-			default:
-				// 월간 퀘스트는 무조건 COMPLETED로 처리
-				usq.setStatus(QuestStatus.ACCOMPLISHED);
-				break;
+		log.debug("일간 퀘스트 진행률 - 오늘 완료 수: {}, 남은 수: {}, 필수 여부: {}",
+			todayLogCount, remainingCount, isEssential);
+
+		return new QuestProgressInfo(remainingCount, isEssential);
+	}
+
+	/**
+	 * 주간 퀘스트 진행률을 계산합니다.
+	 */
+	private QuestProgressInfo calculateWeeklyProgress(UsersSubQuest subQuest, LocalDate today) {
+		WeekPeriodInfo weekInfo = calculateCurrentWeekPeriod(subQuest, today);
+
+		int weeklyLogCount = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(
+			subQuest.getId(), weekInfo.startDate().atStartOfDay());
+
+		int requiredCount = subQuest.getFrequencyType().getCnt();
+		int remainingCount = requiredCount - weeklyLogCount;
+		long daysUntilWeekEnd = ChronoUnit.DAYS.between(today, weekInfo.endDate()) + 1;
+		boolean isEssential = daysUntilWeekEnd <= remainingCount;
+
+		log.debug("주간 퀘스트 진행률 - 주차: {} ~ {}, 완료 수: {}/{}, 남은 일수: {}, 필수 여부: {}",
+			weekInfo.startDate(), weekInfo.endDate(), weeklyLogCount, requiredCount,
+			daysUntilWeekEnd, isEssential);
+
+		return new QuestProgressInfo(remainingCount, isEssential);
+	}
+
+	/**
+	 * 월간 퀘스트 진행률을 계산합니다.
+	 */
+	private QuestProgressInfo calculateMonthlyProgress(UsersSubQuest subQuest, LocalDate today) {
+		LocalDate startDate = subQuest.getMainQuest().getStartDate();
+		LocalDate endDate = subQuest.getMainQuest().getEndDate();
+
+		int totalLogCount = usersSubQuestLogRepository.countByUsersSubQuestIdAndCreatedAtAfter(
+			subQuest.getId(), startDate.atStartOfDay());
+
+		int requiredCount = subQuest.getFrequencyType().getCnt();
+		int remainingCount = requiredCount - totalLogCount;
+		long daysUntilEnd = ChronoUnit.DAYS.between(today, endDate) + 1;
+		boolean isEssential = daysUntilEnd <= remainingCount;
+
+		log.debug("월간 퀘스트 진행률 - 기간: {} ~ {}, 완료 수: {}/{}, 남은 일수: {}, 필수 여부: {}",
+			startDate, endDate, totalLogCount, requiredCount, daysUntilEnd, isEssential);
+
+		return new QuestProgressInfo(remainingCount, isEssential);
+	}
+
+	/**
+	 * 현재 주차의 시작일과 종료일을 계산합니다.
+	 */
+	private WeekPeriodInfo calculateCurrentWeekPeriod(UsersSubQuest subQuest, LocalDate today) {
+		LocalDate mainQuestStartDate = subQuest.getMainQuest().getStartDate();
+		long daysSinceStart = ChronoUnit.DAYS.between(mainQuestStartDate, today);
+		long weekOffset = (daysSinceStart / 7) * 7;
+
+		LocalDate weekStartDate = mainQuestStartDate.plusDays(weekOffset);
+		LocalDate weekEndDate = weekStartDate.plusDays(6);
+
+		return new WeekPeriodInfo(weekStartDate, weekEndDate);
+	}
+
+	// ==================== Quest Status Management ====================
+
+	/**
+	 * 서브 퀘스트 완료 상태를 업데이트합니다.
+	 */
+	private void updateSubQuestStatus(UsersSubQuest subQuest) {
+		FrequencyType type = subQuest.getFrequencyType();
+
+		QuestStatus newStatus = switch (type) {
+			case WEEKLY_1, WEEKLY_2, WEEKLY_3, WEEKLY_4, WEEKLY_5, WEEKLY_6 ->
+				calculateWeeklyQuestStatus(subQuest, type);
+			default -> QuestStatus.ACCOMPLISHED;
+		};
+
+		subQuest.setStatus(newStatus);
+		log.debug("서브 퀘스트 상태 업데이트 - subQuestId: {}, newStatus: {}", subQuest.getId(), newStatus);
+	}
+
+	/**
+	 * 주간 퀘스트의 완료 상태를 계산합니다.
+	 */
+	private QuestStatus calculateWeeklyQuestStatus(UsersSubQuest subQuest, FrequencyType type) {
+		WeekPeriodInfo weekInfo = calculateCurrentWeekPeriod(subQuest, LocalDate.now());
+
+		List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(subQuest.getId());
+		long weeklyLogCount = logs.stream()
+			.filter(log -> !log.getCreatedAt().isBefore(weekInfo.startDate().atStartOfDay()))
+			.count();
+
+		boolean weeklyGoalAchieved = weeklyLogCount >= type.getCnt();
+
+		log.debug("주간 퀘스트 상태 계산 - 목표: {}, 완료: {}, 달성 여부: {}",
+			type.getCnt(), weeklyLogCount, weeklyGoalAchieved);
+
+		return weeklyGoalAchieved ? QuestStatus.WEEKLY_ACCOMPLISHED : QuestStatus.ACCOMPLISHED;
+	}
+
+	// ==================== Main Quest Completion ====================
+
+	/**
+	 * 메인 퀘스트 완료 여부를 확인하고 보상을 지급합니다.
+	 */
+	private MainQuestCompletionResult checkAndCompleteMainQuest(UsersMainQuest mainQuest) {
+		log.info("메인 퀘스트 완료 검증 시작 - mainQuestId: {}, 제목: {}, 기간: {} ~ {}",
+			mainQuest.getId(), mainQuest.getTitle(), mainQuest.getStartDate(), mainQuest.getEndDate());
+
+		boolean allCompleted = validateAllSubQuestsCompleted(mainQuest);
+
+		if (allCompleted) {
+			return completeMainQuest(mainQuest);
+		} else {
+			log.info("❌ 메인 퀘스트 완료 실패 - mainQuestId: {}", mainQuest.getId());
+			return new MainQuestCompletionResult(false, List.of());
 		}
+	}
+
+	/**
+	 * 모든 서브 퀘스트의 완료 여부를 검증합니다.
+	 */
+	private boolean validateAllSubQuestsCompleted(UsersMainQuest mainQuest) {
+		for (UsersSubQuest subQuest : mainQuest.getUsersSubQuests()) {
+			if (!isSubQuestCompleted(subQuest, mainQuest)) {
+				log.info("서브 퀘스트 미완료 - subQuestId: {}, 설명: {}",
+					subQuest.getId(), subQuest.getDescription());
+				return false;
+			}
+			subQuest.setStatus(QuestStatus.COMPLETED);
+		}
+		return true;
+	}
+
+	/**
+	 * 개별 서브 퀘스트의 완료 여부를 확인합니다.
+	 */
+	private boolean isSubQuestCompleted(UsersSubQuest subQuest, UsersMainQuest mainQuest) {
+		List<UsersSubQuestLog> logs = usersSubQuestLogRepository.findByUsersSubQuestId(subQuest.getId());
+		FrequencyType type = subQuest.getFrequencyType();
+
+		log.debug("서브 퀘스트 완료 검증 - subQuestId: {}, 타입: {}, 로그 수: {}",
+			subQuest.getId(), type, logs.size());
+
+		return switch (type) {
+			case DAILY -> validateDailyQuestCompletion(logs, mainQuest);
+			case WEEKLY_1, WEEKLY_2, WEEKLY_3, WEEKLY_4, WEEKLY_5, WEEKLY_6 ->
+				validateWeeklyQuestCompletion(subQuest, logs, mainQuest);
+			case MONTHLY_1, MONTHLY_2, MONTHLY_3, MONTHLY_4 ->
+				validateMonthlyQuestCompletion(logs, type);
+			default -> false;
+		};
+	}
+
+	/**
+	 * 일간 퀘스트 완료 여부를 검증합니다.
+	 */
+	private boolean validateDailyQuestCompletion(List<UsersSubQuestLog> logs, UsersMainQuest mainQuest) {
+		long requiredDays = ChronoUnit.DAYS.between(mainQuest.getStartDate(), mainQuest.getEndDate()) + 1;
+		boolean completed = logs.size() >= requiredDays;
+
+		log.debug("[DAILY] 필수 일수: {}, 완료 일수: {}, 완료 여부: {}",
+			requiredDays, logs.size(), completed);
+
+		return completed;
+	}
+
+	/**
+	 * 주간 퀘스트 완료 여부를 검증합니다.
+	 */
+	private boolean validateWeeklyQuestCompletion(UsersSubQuest subQuest, List<UsersSubQuestLog> logs, UsersMainQuest mainQuest) {
+		if (subQuest.getStatus() != QuestStatus.WEEKLY_ACCOMPLISHED) {
+			return false;
+		}
+
+		int requiredPerWeek = subQuest.getFrequencyType().getCnt();
+		LocalDate currentDate = mainQuest.getStartDate();
+		LocalDate endDate = mainQuest.getEndDate();
+
+		while (!currentDate.isAfter(endDate)) {
+			LocalDate weekEnd = currentDate.plusDays(6);
+			if (weekEnd.isAfter(endDate)) {
+				weekEnd = endDate;
+			}
+
+			if (!validateWeekPeriod(logs, currentDate, weekEnd, requiredPerWeek)) {
+				return false;
+			}
+
+			currentDate = currentDate.plusWeeks(1);
+		}
+
+		return true;
+	}
+
+	/**
+	 * 특정 주차의 완료 조건을 검증합니다.
+	 */
+	private boolean validateWeekPeriod(List<UsersSubQuestLog> logs, LocalDate startDate, LocalDate endDate, int required) {
+		long logsInPeriod = logs.stream()
+			.filter(log -> {
+				LocalDate logDate = log.getCreatedAt().toLocalDate();
+				return !logDate.isBefore(startDate) && !logDate.isAfter(endDate);
+			})
+			.count();
+
+		boolean periodCompleted = logsInPeriod >= required;
+
+		log.debug("[WEEKLY] 기간: {} ~ {}, 필수: {}, 완료: {}, 결과: {}",
+			startDate, endDate, required, logsInPeriod, periodCompleted);
+
+		return periodCompleted;
+	}
+
+	/**
+	 * 월간 퀘스트 완료 여부를 검증합니다.
+	 */
+	private boolean validateMonthlyQuestCompletion(List<UsersSubQuestLog> logs, FrequencyType type) {
+		int required = type.getCnt();
+		boolean completed = logs.size() >= required;
+
+		log.debug("[MONTHLY] 필수 수행: {}, 완료 수행: {}, 완료 여부: {}",
+			required, logs.size(), completed);
+
+		return completed;
+	}
+
+	/**
+	 * 메인 퀘스트를 완료 처리하고 보상을 지급합니다.
+	 */
+	private MainQuestCompletionResult completeMainQuest(UsersMainQuest mainQuest) {
+		List<AttributeDto> mainQuestRewards = AttributeDto.fromUsersMainQuest(mainQuest);
+
+		mainQuest.setStatus(QuestStatus.ACCOMPLISHED);
+		attributeService.addExp(mainQuest.getUsers(), mainQuestRewards, SourceType.MAINQUEST);
+
+		log.info("✔ 메인 퀘스트 완료 처리 완료 - mainQuestId: {}, 보상 수: {}",
+			mainQuest.getId(), mainQuestRewards.size());
+
+		return new MainQuestCompletionResult(true, mainQuestRewards);
+	}
+
+	// ==================== Inner Classes ====================
+
+	/**
+	 * 퀘스트 진행률 정보를 담는 클래스
+	 */
+	private record QuestProgressInfo(
+		int repeatCount,
+		boolean essential
+	) {
+
+	}
+
+	/**
+	 * 주차 기간 정보를 담는 클래스
+	 */
+	private record WeekPeriodInfo(
+		LocalDate startDate,
+		LocalDate endDate
+	) {
+
+	}
+
+	/**
+	 * 메인 퀘스트 완료 결과를 담는 클래스
+	 */
+	private record MainQuestCompletionResult(
+		boolean completed,
+		List<AttributeDto> rewards
+	) {
+
 	}
 }
