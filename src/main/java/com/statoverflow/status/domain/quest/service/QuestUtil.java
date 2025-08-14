@@ -2,6 +2,7 @@ package com.statoverflow.status.domain.quest.service;
 
 import static com.statoverflow.status.global.error.ErrorType.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
@@ -94,17 +95,18 @@ public class QuestUtil {
 			return Collections.emptyList();
 		}
 
+		// 수정: ArrayList로 복사하여 mutable 리스트 생성
+		List<T> mutableList = new ArrayList<>(items);
+
 		if (count >= items.size()) {
 			log.debug("요청 개수가 전체 개수 이상 - 전체 리스트 셔플하여 반환");
-			List<T> shuffled = List.copyOf(items);
-			Collections.shuffle(shuffled, random);
-			return shuffled;
+			Collections.shuffle(mutableList, random);
+			return mutableList;
 		}
 
-		List<T> shuffledItems = List.copyOf(items);
-		Collections.shuffle(shuffledItems, random);
+		Collections.shuffle(mutableList, random);
 
-		List<T> selected = shuffledItems.stream()
+		List<T> selected = mutableList.stream()
 			.limit(count)
 			.collect(Collectors.toList());
 
