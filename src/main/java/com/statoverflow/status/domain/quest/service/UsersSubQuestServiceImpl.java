@@ -376,7 +376,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 
 
 				LocalDate endDate = usersSubQuest.getMainQuest().getEndDate();
-				Long daysFromEndDate = ChronoUnit.DAYS.between(endDate, today) + 1;
+				Long daysFromEndDate = ChronoUnit.DAYS.between(today, endDate) + 1;
 
 
 				cnt = (usersSubQuest.getFrequencyType().getCnt() - logCnt);
