@@ -2,6 +2,7 @@ package com.statoverflow.status.domain.quest.controller;
 
 import java.util.List;
 
+import com.statoverflow.status.domain.quest.dto.WithStatus;
 import com.statoverflow.status.domain.quest.dto.response.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -168,12 +169,23 @@ public class QuestController {
 		return ApiResponse.ok(usersSubQuestService.editSubQuest(user.id(), dto));
 	}
 
-
 	@Operation(summary = "[퀘스트 조회 - 3] 메인 퀘스트 ID로 메인 퀘스트 정보 조회", description = "특정 메인 퀘스트에 대한 정보를 조회합니다.")
 	@GetMapping("/{id}")
 	public ResponseEntity<ApiResponse<UsersMainQuestResponseDto>> getUsersMainQuestById(
 		@Parameter(description = "메인 퀘스트 ID", required = true) @PathVariable Long id,
 		@Parameter(hidden = true) @CurrentUser BasicUsersDto user) {
 		return ApiResponse.ok(usersMainQuestService.getUsersMainQuestById(user.id(), id));
+	}
+
+	@Operation(summary = "누적 기록 보기", description = "완료한 퀘스트의 데이터를 총합하여 누적 기록을 출력합니다.")
+	@GetMapping("/user-statistics")
+	public ResponseEntity<ApiResponse<UserQuestStatisticsDto>> getUserStatics(@CurrentUser BasicUsersDto user) {
+		return ApiResponse.ok(usersMainQuestService.getUserStatistics(user.id()));
+	}
+
+	@Operation(summary = "완료한 메인 퀘스트 보기", description = "완료한 메인퀘스트를 ‘완료일 기준 최근 순’으로 상단부터 하단 방향으로 출력합니다.")
+	@GetMapping("/history")
+	public ResponseEntity<ApiResponse<List<WithStatus<UsersMainQuestResponseDto>>>> getUsersMainQuestHistory(@CurrentUser BasicUsersDto user) {
+		return ApiResponse.ok(usersMainQuestService.getUsersMainQuestHistory(user.id()));
 	}
 }

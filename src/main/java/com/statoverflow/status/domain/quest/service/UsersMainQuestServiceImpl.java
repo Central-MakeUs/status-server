@@ -1,5 +1,7 @@
 package com.statoverflow.status.domain.quest.service;
 
+import static org.springframework.data.domain.Sort.Direction.*;
+
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -7,15 +9,18 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.master.entity.MainSubQuest;
 import com.statoverflow.status.domain.attribute.dto.AttributeDto;
+import com.statoverflow.status.domain.quest.dto.WithStatus;
 import com.statoverflow.status.domain.quest.dto.request.CreateQuestRequestDto;
 import com.statoverflow.status.domain.quest.dto.response.CreateQuestResponseDto;
 import com.statoverflow.status.domain.quest.dto.response.SubQuestResponseDto;
+import com.statoverflow.status.domain.quest.dto.response.UserQuestStatisticsDto;
 import com.statoverflow.status.domain.quest.dto.response.UsersMainQuestResponseDto;
 import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
@@ -54,6 +59,11 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	private final UsersSubQuestRepository usersSubQuestRepository;
 	private final MainSubQuestRepository mainSubQuestRepository;
 
+	private static final Sort HISTORY_SORT =
+		Sort.by(DESC, "updatedAt").and(Sort.by(DESC, "id"));
+
+	private static final Sort DEFAULT_SORT =
+		Sort.by(ASC, "endDate").and(Sort.by(ASC, "id"));
 	/**
 	 * 새로운 퀘스트를 생성합니다.
 	 *
@@ -84,7 +94,7 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	 */
 	@Override
 	public void deleteMainQuest(Long mainQuestId) {
-		UsersMainQuest mainQuest = findActiveUsersMainQuest(mainQuestId);
+		UsersMainQuest mainQuest = findUsersMainQuestByStatus(mainQuestId, Arrays.asList(QuestStatus.DELETED, QuestStatus.COMPLETED));
 
 		// 메인 퀘스트와 연관된 서브 퀘스트들을 모두 삭제 상태로 변경
 		mainQuest.setStatus(QuestStatus.DELETED);
@@ -104,7 +114,7 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UsersMainQuestResponseDto> getUsersMainQuests(Long userId) {
-		return getUsersMainQuestByUserId(userId).stream()
+		return getUsersMainQuestByUserIdAndStatus(userId, List.of(QuestStatus.ACTIVE), DEFAULT_SORT).stream()
 			.map(this::convertToResponseDto)
 			.collect(Collectors.toList());
 	}
@@ -116,9 +126,8 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	 * @return 활성 퀘스트 목록
 	 */
 	@Override
-	@Transactional(readOnly = true)
-	public List<UsersMainQuest> getUsersMainQuestByUserId(Long userId) {
-		return usersMainQuestRepository.findByUsersIdAndStatus(userId, QuestStatus.ACTIVE);
+	public List<UsersMainQuest> getUsersMainQuestByUserIdAndStatus(Long userId, List<QuestStatus> statuses, Sort sort) {
+		return usersMainQuestRepository.findByUsersIdAndStatusIn(userId, statuses, sort);
 	}
 
 	/**
@@ -130,11 +139,71 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	 */
 	@Override
 	public UsersMainQuestResponseDto getUsersMainQuestById(Long userId, Long mainQuestId) {
-		return getUsersMainQuestByUserId(userId).stream()
+		return getUsersMainQuestByUserIdAndStatus(userId, List.of(QuestStatus.ACTIVE), DEFAULT_SORT).stream()
 			.filter(quest -> Objects.equals(quest.getId(), mainQuestId))
 			.findFirst()
 			.map(this::convertToResponseDto)
 			.orElseThrow(() -> new CustomException(ErrorType.MAINQUEST_NOT_FOUND));
+	}
+
+	/**
+	 * 특정 사용자의 퀘스트 누적 기록을 조회합니다.
+	 *
+	 * @param userId 사용자 ID
+	 * @return 누적 기록 정보
+	 */
+	@Override
+	public UserQuestStatisticsDto getUserStatistics(Long userId) {
+		List<UsersMainQuest> usersMainQuests =
+			getUsersMainQuestByUserIdAndStatus(
+				userId,
+				List.of(QuestStatus.COMPLETED, QuestStatus.FAILED),
+				DEFAULT_SORT
+			);
+		log.debug("유저 완료 메인퀘스트 수: {}", usersMainQuests.size());
+		int totalMainQuests = usersMainQuests.size();
+		if (totalMainQuests == 0) {
+			return new UserQuestStatisticsDto(0, 0, 0, 0);
+		}
+
+		// (2) 총 서브 퀘스트 인증 횟수 = 모든 USQ의 로그수 합
+		int totalSubQuestVerifications = usersMainQuests.stream()
+			.flatMap(umq -> umq.getUsersSubQuests().stream())
+			.mapToInt(usq -> usq.getLogs() == null ? 0 : usq.getLogs().size())
+			.sum();
+
+		// (3) 평균 완료율
+		int averageCompletionRate = (int)usersMainQuests.stream()
+			.map(this::calculateQuestProgress)
+			.mapToInt(QuestProgressInfo::getProgressPercentage)
+			.average()
+			.orElse(0);
+
+		// (4) 평균 수행 기간(일) = startDate ~ 완료/실패일
+		int averageDurationDays = (int)usersMainQuests.stream()
+			.mapToLong(umq -> {
+				LocalDate start = umq.getStartDate();
+				LocalDate finished = umq.getStatus() == QuestStatus.COMPLETED ? umq.getUpdatedAt().toLocalDate() : umq.getEndDate();
+				long days = ChronoUnit.DAYS.between(start, finished) + 1;
+				return Math.max(days, 0L);
+			})
+			.average()
+			.orElse(0);
+
+		return new UserQuestStatisticsDto(
+			totalMainQuests,
+			totalSubQuestVerifications,
+			averageCompletionRate,
+			averageDurationDays
+		);
+	}
+
+	@Override
+	public List<WithStatus<UsersMainQuestResponseDto>> getUsersMainQuestHistory(Long userId) {
+		List<UsersMainQuest> umq = getUsersMainQuestByUserIdAndStatus(userId, Arrays.asList(QuestStatus.COMPLETED, QuestStatus.FAILED), HISTORY_SORT);
+		return umq.stream()
+			.map(usersMainQuest -> WithStatus.of(convertToResponseDto(usersMainQuest), usersMainQuest.getStatus()))
+			.collect(Collectors.toList());
 	}
 
 	// ==================== Private Helper Methods ====================
@@ -158,10 +227,10 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	/**
 	 * 활성 상태의 UsersMainQuest를 조회합니다.
 	 */
-	private UsersMainQuest findActiveUsersMainQuest(Long mainQuestId) {
+	private UsersMainQuest findUsersMainQuestByStatus(Long mainQuestId, List<QuestStatus> statuses) {
 		return usersMainQuestRepository.findByIdAndStatusNotIn(
 			mainQuestId,
-			Arrays.asList(QuestStatus.DELETED, QuestStatus.COMPLETED)
+			statuses
 		).orElseThrow(() -> new CustomException(ErrorType.INVALID_MAINQUEST));
 	}
 
