@@ -86,7 +86,6 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	 */
 	@Override
 	public List<QuestHistoryByDateDto> getSubQuestsLogs(Long userId, Long mainQuestId) {
-		// TODO: mainQuestId 소유권 검증 로직 추가 필요
 
 		List<UsersSubQuest> subQuests = findSubQuestsWithHistory(userId, mainQuestId);
 		List<UsersSubQuestLog> allLogs = collectAllSubQuestLogs(subQuests);
@@ -158,11 +157,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	 * 히스토리 조회용 서브 퀘스트를 조회합니다.
 	 */
 	private List<UsersSubQuest> findSubQuestsWithHistory(Long userId, Long mainQuestId) {
-		List<QuestStatus> statusList = Arrays.asList(
-			QuestStatus.ACTIVE, QuestStatus.ACCOMPLISHED,
-			QuestStatus.WEEKLY_ACCOMPLISHED, QuestStatus.COMPLETED
-		);
-		return usersSubQuestRepository.findByUsersIdAndMainQuestIdAndStatusIn(userId, mainQuestId, statusList);
+		return usersSubQuestRepository.findByUsersIdAndMainQuestId(userId, mainQuestId);
 	}
 
 	/**

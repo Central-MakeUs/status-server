@@ -1,16 +1,21 @@
 package com.statoverflow.status.domain.quest.service;
 
+import static org.springframework.data.domain.Sort.Direction.*;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.statoverflow.status.domain.master.entity.MainQuest;
 import com.statoverflow.status.domain.quest.dto.response.MainQuestResponseDto;
 import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
+import com.statoverflow.status.domain.quest.enums.QuestStatus;
 import com.statoverflow.status.domain.quest.repository.MainQuestRepository;
 import com.statoverflow.status.domain.quest.service.interfaces.MainQuestService;
 import com.statoverflow.status.domain.quest.service.interfaces.UsersMainQuestService;
@@ -223,7 +228,7 @@ class MainQuestFilterService {
 	 * 사용자가 진행 중인 메인 퀘스트 집합 조회
 	 */
 	private Set<MainQuest> getUserActiveMainQuests(Long userId) {
-		return usersMainQuestService.getUsersMainQuestByUserId(userId)
+	return usersMainQuestService.getUsersMainQuestByUserIdAndStatus(userId, List.of(QuestStatus.ACTIVE), Sort.by(DESC, "id"))
 			.stream()
 			.map(UsersMainQuest::getMainQuest)
 			.collect(Collectors.toSet());
