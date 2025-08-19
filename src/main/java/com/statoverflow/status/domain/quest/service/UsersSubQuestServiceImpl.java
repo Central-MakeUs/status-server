@@ -576,7 +576,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	private MainQuestCompletionResult completeMainQuest(UsersMainQuest mainQuest) {
 		List<AttributeDto> mainQuestRewards = AttributeDto.fromUsersMainQuest(mainQuest);
 
-		mainQuest.setStatus(QuestStatus.ACCOMPLISHED);
+		mainQuest.setStatus(QuestStatus.COMPLETED);
 		attributeService.addExp(mainQuest.getUsers(), mainQuestRewards, SourceType.MAINQUEST);
 
 		log.info("✔ 메인 퀘스트 완료 처리 완료 - mainQuestId: {}, 보상 수: {}",
