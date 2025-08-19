@@ -138,11 +138,11 @@ public class UsersMainQuestServiceImpl implements UsersMainQuestService {
 	 * @return 퀘스트 정보
 	 */
 	@Override
-	public UsersMainQuestResponseDto getUsersMainQuestById(Long userId, Long mainQuestId) {
-		return getUsersMainQuestByUserIdAndStatus(userId, List.of(QuestStatus.ACTIVE), DEFAULT_SORT).stream()
+	public WithStatus<UsersMainQuestResponseDto> getUsersMainQuestById(Long userId, Long mainQuestId) {
+		return getUsersMainQuestByUserIdAndStatus(userId, List.of(QuestStatus.ACTIVE, QuestStatus.FAILED, QuestStatus.COMPLETED), DEFAULT_SORT).stream()
 			.filter(quest -> Objects.equals(quest.getId(), mainQuestId))
 			.findFirst()
-			.map(this::convertToResponseDto)
+			.map(usersMainQuest -> WithStatus.of(convertToResponseDto(usersMainQuest), usersMainQuest.getStatus()))
 			.orElseThrow(() -> new CustomException(ErrorType.MAINQUEST_NOT_FOUND));
 	}
 

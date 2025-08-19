@@ -171,7 +171,7 @@ public class QuestController {
 
 	@Operation(summary = "[퀘스트 조회 - 3] 메인 퀘스트 ID로 메인 퀘스트 정보 조회", description = "특정 메인 퀘스트에 대한 정보를 조회합니다.")
 	@GetMapping("/{id}")
-	public ResponseEntity<ApiResponse<UsersMainQuestResponseDto>> getUsersMainQuestById(
+	public ResponseEntity<ApiResponse<WithStatus<UsersMainQuestResponseDto>>> getUsersMainQuestById(
 		@Parameter(description = "메인 퀘스트 ID", required = true) @PathVariable Long id,
 		@Parameter(hidden = true) @CurrentUser BasicUsersDto user) {
 		return ApiResponse.ok(usersMainQuestService.getUsersMainQuestById(user.id(), id));
