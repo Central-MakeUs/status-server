@@ -169,6 +169,20 @@ public class UsersServiceImpl implements UsersService{
 		usersRepository.save(user);
 	}
 
+	@Override
+	public BasicUsersDto connectProvider(BasicUsersDto users, OAuthProviderDto req) {
+		Users user = usersRepository.findByIdAndProviderType(users.id(), ProviderType.GUEST)
+			.orElseThrow(() -> new CustomException(ErrorType.RESOURCE_NOT_FOUND));
+
+		if(! getUsersByProvider(req).type().equals("SIGNUP"))
+			throw new CustomException(ErrorType.SOCIAL_ALREADY_CONNECTED);
+
+		user.setProviderType(req.providerType());
+		user.setProviderId(req.providerId());
+
+		return BasicUsersDto.from(user);
+	}
+
 	private void initializeUserAttributes(Users user) {
 		List<Attribute> allAttributes = attributeRepository.findAll();
 

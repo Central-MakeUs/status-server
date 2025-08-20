@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.users.controller;
 
+import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.domain.users.dto.NicknameRequestDto;
 import com.statoverflow.status.global.annotation.CurrentUser;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,17 @@ public class UsersController {
 		BasicUsersDto user = usersService.signUp(req);
 		tokenService.issueAndSetTokens(user, response);
 		return ApiResponse.created(user);
+	}
+
+
+	@Operation(summary = "소셜 아이디 연동", description = "게스트 회원에서 소셜 아이디를 연동합니다.")
+	@PatchMapping("/connect-provider")
+	public ResponseEntity<ApiResponse<BasicUsersDto>> connectProvider(@CurrentUser BasicUsersDto users,
+		@RequestBody OAuthProviderDto req,
+		@Parameter(hidden = true) HttpServletResponse response) {
+		BasicUsersDto user = usersService.connectProvider(users, req);
+		tokenService.issueAndSetTokens(user, response);
+		return ApiResponse.ok(user);
 	}
 
 	@Operation(summary = "닉네임 수정", description = "사용자의 닉네임을 변경합니다. 토큰이 재발급됩니다.")

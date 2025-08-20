@@ -18,4 +18,6 @@ public interface UsersService {
     BasicUsersDto updateNickname(Long userId, String nickname);
 
 	void deleteUser(Long id, HttpServletResponse response);
+
+	BasicUsersDto connectProvider(BasicUsersDto users, OAuthProviderDto req);
 }

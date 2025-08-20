@@ -14,6 +14,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
+import com.statoverflow.status.domain.users.enums.ProviderType;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -57,6 +58,7 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
         return Jwts.builder()
             .claim("id", user.id())
             .claim("nickname", user.nickname())
+            .claim("providerType", user.providerType().name())
             .issuedAt(now)
             .expiration(validity)
             .signWith(secretKey)
@@ -72,6 +74,7 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
         return Jwts.builder()
             .claim("id", user.id())
             .claim("nickname", user.nickname())
+            .claim("providerType", user.providerType().name())
             .issuedAt(now)
             .expiration(validity)
             .signWith(secretKey)
@@ -137,8 +140,9 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
 
         int id = claims.get("id", Integer.class);
         String nickname = claims.get("nickname", String.class);
+        String providerType = claims.get("providerType", String.class);
 
-        return new BasicUsersDto((long) id, nickname);
+        return BasicUsersDto.of((long) id, nickname, providerType);
 
     }
 
