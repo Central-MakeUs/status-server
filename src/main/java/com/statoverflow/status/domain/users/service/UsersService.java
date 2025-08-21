@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.users.service;
 
+import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
 import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.dto.SocialLoginReturnDto;
@@ -20,7 +21,7 @@ public interface UsersService {
 
 	void deleteUser(Long id, HttpServletResponse response);
 
-	BasicUsersDto connectProvider(BasicUsersDto users, OAuthProviderDto req);
+	BasicUsersDto connectProvider(BasicUsersDto users, OAuthLoginRequestDto req);
 
 	TierDto getTier(Long userId);
 }

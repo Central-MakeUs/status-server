@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.users.controller;
 
+import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
 import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.domain.users.dto.NicknameRequestDto;
 import com.statoverflow.status.global.annotation.CurrentUser;
@@ -44,7 +45,7 @@ public class UsersController {
 	@Operation(summary = "소셜 아이디 연동", description = "게스트 회원에서 소셜 아이디를 연동합니다.")
 	@PatchMapping("/connect-provider")
 	public ResponseEntity<ApiResponse<BasicUsersDto>> connectProvider(@CurrentUser BasicUsersDto users,
-		@RequestBody OAuthProviderDto req,
+		@RequestBody OAuthLoginRequestDto req,
 		@Parameter(hidden = true) HttpServletResponse response) {
 		BasicUsersDto user = usersService.connectProvider(users, req);
 		tokenService.issueAndSetTokens(user, response);

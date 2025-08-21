@@ -15,6 +15,7 @@ import com.statoverflow.status.domain.attribute.dto.AttributesReturnDto;
 import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
 import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
 import com.statoverflow.status.domain.attribute.service.AttributeService;
+import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
 import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.dto.SocialLoginReturnDto;
@@ -188,15 +189,15 @@ public class UsersServiceImpl implements UsersService{
 	}
 
 	@Override
-	public BasicUsersDto connectProvider(BasicUsersDto users, OAuthProviderDto req) {
+	public BasicUsersDto connectProvider(BasicUsersDto users, OAuthLoginRequestDto req) {
 		Users user = usersRepository.findByIdAndProviderType(users.id(), ProviderType.GUEST)
 			.orElseThrow(() -> new CustomException(ErrorType.RESOURCE_NOT_FOUND));
 
-		if(! getUsersByProvider(req).type().equals("SIGNUP"))
+		if(! getUsersByProvider(OAuthLoginRequestDto.OAuthProviderDto(req)).type().equals("SIGNUP"))
 			throw new CustomException(ErrorType.SOCIAL_ALREADY_CONNECTED);
 
-		user.setProviderType(req.providerType());
-		user.setProviderId(req.providerId());
+		user.setProviderType(req.provider());
+		user.setProviderId(req.code());
 
 		agreeToLatestRequiredTerms(user);
 

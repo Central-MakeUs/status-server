@@ -10,4 +10,8 @@ public record OAuthLoginRequestDto(
         ProviderType provider,
         String code
 ) {
+        public static OAuthProviderDto OAuthProviderDto(OAuthLoginRequestDto req) {
+                return new OAuthProviderDto(req.provider, req.code);
+        }
+
 }
