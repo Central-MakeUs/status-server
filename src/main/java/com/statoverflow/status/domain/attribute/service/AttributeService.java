@@ -10,5 +10,5 @@ import java.util.List;
 public interface AttributeService {
     public List<AttributesReturnDto> getAttributes(Long userId);
 
-    void addExp(Users users, List<AttributeDto> attributeDtos, SourceType sourceType);
+    <T> void addExp(Users users, List<AttributeDto> attributeDtos, T sourceType);
 }

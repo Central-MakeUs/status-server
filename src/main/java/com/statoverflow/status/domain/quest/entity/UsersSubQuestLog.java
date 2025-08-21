@@ -48,7 +48,7 @@ public class UsersSubQuestLog {
 	@Column(nullable = true)
 	private String memo;
 
-	@Column(nullable = false)
+	@Column(nullable = false, updatable = false)
 	@CreatedDate
 	private LocalDateTime createdAt;
 

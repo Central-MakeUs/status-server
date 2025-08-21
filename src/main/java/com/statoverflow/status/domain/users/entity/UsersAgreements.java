@@ -10,9 +10,7 @@ import java.time.LocalDateTime;
 import com.statoverflow.status.domain.master.entity.TermsAndConditions;
 
 @Entity
-@Table(name = "users_agreements", uniqueConstraints = {
-	@UniqueConstraint(columnNames = {"user_id", "terms_id"})
-})
+@Table(name = "users_agreements")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

@@ -8,6 +8,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import com.statoverflow.status.domain.master.enums.TermsType;
+import com.statoverflow.status.domain.users.enums.ProviderType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,9 +27,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "terms_and_conditions", uniqueConstraints = {
-	@UniqueConstraint(columnNames = {"type", "version"}) // 약관 종류별로 버전은 고유해야 함
-})
+@Table(name = "terms_and_conditions")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EntityListeners(AuditingEntityListener.class)
@@ -38,14 +37,18 @@ public class TermsAndConditions {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, length = 20)
+	@Column(nullable = false)
 	private String version;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false, length = 50)
+	@Column(nullable = false)
 	private TermsType type;
 
-	@Column(nullable = false, length = 2048)
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private ProviderType.LoginType providerType;
+
+	@Column(nullable = false)
 	private String link; // 노션 문서 링크
 
 	@Column(nullable = false)

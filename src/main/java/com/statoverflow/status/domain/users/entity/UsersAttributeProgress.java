@@ -46,11 +46,7 @@ public class UsersAttributeProgress {
 
 	@Setter
 	@Column(nullable = false)
-	private Integer level;
-
-	@Setter
-	@Column(nullable = false)
-	private Integer exp;
+	private Long totalExp;
 
 	@LastModifiedDate
 	@Column(nullable = false)
@@ -58,7 +54,6 @@ public class UsersAttributeProgress {
 
 	@PrePersist
 	protected void onCreate() {
-		this.level = 5;
-		this.exp = 0;
+		this.totalExp = 5L;
 	}
 }

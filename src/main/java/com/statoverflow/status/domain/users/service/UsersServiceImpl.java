@@ -11,24 +11,30 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.statoverflow.status.domain.attribute.dto.AttributesReturnDto;
 import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
 import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
+import com.statoverflow.status.domain.attribute.service.AttributeService;
 import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
 import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.dto.SocialLoginReturnDto;
 import com.statoverflow.status.domain.master.entity.Attribute;
 import com.statoverflow.status.domain.master.entity.NicknameGenerator;
 import com.statoverflow.status.domain.master.entity.TermsAndConditions;
+import com.statoverflow.status.domain.master.entity.TierLevel;
 import com.statoverflow.status.domain.master.enums.DefaultNicknameType;
 import com.statoverflow.status.domain.master.enums.TermsType;
 import com.statoverflow.status.domain.master.repository.NicknameGeneratorRepository;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
+import com.statoverflow.status.domain.users.dto.TierDto;
+import com.statoverflow.status.domain.users.dto.WithTier;
 import com.statoverflow.status.domain.users.entity.UsersAgreements;
 import com.statoverflow.status.domain.users.enums.ProviderType;
 import com.statoverflow.status.domain.users.repository.TermsAndConditionsRepository;
 import com.statoverflow.status.domain.users.entity.Users;
 import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
 import com.statoverflow.status.domain.users.enums.AccountStatus;
+import com.statoverflow.status.domain.users.repository.TierLevelRepository;
 import com.statoverflow.status.domain.users.repository.UsersAgreementsRepository;
 import com.statoverflow.status.domain.users.repository.UsersRepository;
 import com.statoverflow.status.global.error.ErrorType;
@@ -50,6 +56,9 @@ public class UsersServiceImpl implements UsersService{
 	private final NicknameGeneratorRepository nicknameGeneratorRepository;
 	private final Random random;
 
+	private final AttributeService attributeService;
+	private final TierLevelRepository tierLevelRepository;
+
 	@Value("${status.users.users-service.characters}")
 	private String VALID_CHARACTERS;
 
@@ -64,7 +73,10 @@ public class UsersServiceImpl implements UsersService{
 		return usersRepository.findByProviderTypeAndProviderId(
 				provider.providerType(), provider.providerId()
 			)
-			.<SocialLoginReturnDto>map(BasicUsersDto::from)
+			.map(user -> {
+				TierDto tier = getTier(user.getId());
+				return (SocialLoginReturnDto) BasicUsersDto.from(user, tier);
+			})
 			.orElse(provider);
 	}
 
@@ -86,7 +98,7 @@ public class UsersServiceImpl implements UsersService{
 		agreeToLatestRequiredTerms(user);
 
 		log.debug("회원가입 완료: {}", user.getId());
-		return BasicUsersDto.from(user);
+		return BasicUsersDto.from(user, getTier(user.getId()));
 	}
 
 	private String generateRandomNickname() {
@@ -122,7 +134,7 @@ public class UsersServiceImpl implements UsersService{
 		agreeToLatestRequiredTerms(user);
 
 		log.debug("회원가입 완료: {}", user.getId());
-		return BasicUsersDto.from(user);
+		return BasicUsersDto.from(user, getTier(user.getId()));
 	}
 
 	private void agreeToLatestRequiredTerms(Users user) {
@@ -133,10 +145,16 @@ public class UsersServiceImpl implements UsersService{
 		List<UsersAgreements> usersAgreements = new ArrayList<>();
 		validTerms.forEach(
 			termsAndConditions -> {
-				usersAgreements.add(UsersAgreements.builder()
-					.user(user)
-					.terms(termsAndConditions)
-					.build());
+
+				if((user.getProviderType().equals(ProviderType.GUEST) && termsAndConditions.getProviderType().equals(ProviderType.LoginType.GUEST) ||
+					(! user.getProviderType().equals(ProviderType.GUEST)) && termsAndConditions.getProviderType().equals(ProviderType.LoginType.SOCIAL))) {
+					usersAgreements.add(UsersAgreements.builder()
+						.user(user)
+						.terms(termsAndConditions)
+						.build());
+				}
+
+
 			}
 		);
 		usersAgreementsRepository.saveAll(usersAgreements);
@@ -157,7 +175,7 @@ public class UsersServiceImpl implements UsersService{
 		user.setTag(generateTagForNickname(nickname));
 		user.setNickname(nickname);
 
-		return BasicUsersDto.from(user);
+		return BasicUsersDto.from(user, getTier(user.getId()));
 	}
 
 	@Override
@@ -180,7 +198,9 @@ public class UsersServiceImpl implements UsersService{
 		user.setProviderType(req.providerType());
 		user.setProviderId(req.providerId());
 
-		return BasicUsersDto.from(user);
+		agreeToLatestRequiredTerms(user);
+
+		return BasicUsersDto.from(user, getTier(user.getId()));
 	}
 
 	private void initializeUserAttributes(Users user) {
@@ -216,5 +236,17 @@ public class UsersServiceImpl implements UsersService{
 		} while (isDuplicate); // 중복이 발생하면 다시 생성
 
 		return generatedTag;
+	}
+
+	@Override
+	public TierDto getTier(Long userId) {
+		int levelSum = attributeService.getAttributes(userId)
+			.stream()
+			.mapToInt(AttributesReturnDto::level)
+			.sum();
+		levelSum -= 12;
+		TierLevel tierLevel = tierLevelRepository.findTopByXpRequiredGreaterThanOrderByXpRequiredAsc((long)levelSum);
+
+		return new TierDto(tierLevel.getGrade(), tierLevel.getLevelOutput());
 	}
 }

@@ -1,5 +1,6 @@
 package com.statoverflow.status.domain.attribute.dto;
 
+import com.statoverflow.status.domain.master.entity.Attribute;
 import com.statoverflow.status.domain.master.entity.AttributeLevel;
 import com.statoverflow.status.domain.master.enums.AttributeType;
 import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
@@ -13,23 +14,19 @@ public record AttributesReturnDto(
     AttributeType type,
     String description,
     Integer level,
-    Integer exp,
-    Integer expToNextLevel) {
+    Long exp,
+    Long expToNextLevel) {
 
-    public static AttributesReturnDto fromEntity(UsersAttributeProgress entity, Map<AttributeType, Map<Integer, Integer>> levelMap) {
-        int currentExp = entity.getExp();
-        int currentLevel = entity.getLevel();
-
-        int nextLevelExp = levelMap.get(entity.getAttribute().getType()).get(currentLevel);
+    public static AttributesReturnDto getLevel(UsersAttributeProgress attributeProgress, AttributeLevel levelInfo) {
 
         return new AttributesReturnDto(
-                entity.getAttribute().getId(),
-                entity.getAttribute().getName(),
-                entity.getAttribute().getType(),
-                entity.getAttribute().getDescription(),
-                currentLevel,
-                currentExp,
-                nextLevelExp - currentExp
+            attributeProgress.getAttribute().getId(),
+            attributeProgress.getAttribute().getName(),
+            attributeProgress.getAttribute().getType(),
+            attributeProgress.getAttribute().getDescription(),
+            levelInfo.getId().getLevel(),
+            attributeProgress.getTotalExp(),
+            levelInfo.getXpRequired() - attributeProgress.getTotalExp()
         );
     }
 

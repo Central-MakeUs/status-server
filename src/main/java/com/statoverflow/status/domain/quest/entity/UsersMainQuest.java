@@ -89,6 +89,7 @@ public class UsersMainQuest {
 	private LocalDateTime createdAt;
 
 	@LastModifiedDate
+	@Column(nullable = false)
 	private LocalDateTime updatedAt;
 
 	@Setter

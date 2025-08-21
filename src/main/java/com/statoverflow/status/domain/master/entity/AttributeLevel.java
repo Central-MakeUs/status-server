@@ -22,6 +22,6 @@ public class AttributeLevel {
 	private AttributeLevelId id;
 
 	@Column(nullable = false)
-	private Integer requiredExp;
+	private Long xpRequired;
 
 }

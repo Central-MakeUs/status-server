@@ -290,7 +290,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 	 */
 	private List<AttributeDto> grantSubQuestRewards(UsersSubQuest subQuest) {
 		List<AttributeDto> rewards = AttributeDto.fromUsersSubQuest(subQuest);
-		attributeService.addExp(subQuest.getUsers(), rewards, SourceType.SUBQUESTLOG);
+		attributeService.addExp(subQuest.getUsers(), rewards, subQuest);
 		log.debug("서브 퀘스트 보상 지급 완료 - subQuestId: {}, rewards: {}", subQuest.getId(), rewards.size());
 		return rewards;
 	}
@@ -572,7 +572,7 @@ public class UsersSubQuestServiceImpl implements UsersSubQuestService {
 		List<AttributeDto> mainQuestRewards = AttributeDto.fromUsersMainQuest(mainQuest);
 
 		mainQuest.setStatus(QuestStatus.COMPLETED);
-		attributeService.addExp(mainQuest.getUsers(), mainQuestRewards, SourceType.MAINQUEST);
+		attributeService.addExp(mainQuest.getUsers(), mainQuestRewards, mainQuest);
 
 		log.info("✔ 메인 퀘스트 완료 처리 완료 - mainQuestId: {}, 보상 수: {}",
 			mainQuest.getId(), mainQuestRewards.size());

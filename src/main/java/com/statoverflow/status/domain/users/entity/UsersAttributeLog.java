@@ -46,13 +46,8 @@ public class UsersAttributeLog {
 	@JoinColumn(name = "users_id", nullable = false)
 	private Users user;
 
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "main_quest_id", nullable = true)
-	private UsersMainQuest mainQuest;
-
-	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "sub_quest_id", nullable = true)
-	private UsersSubQuestLog subQuestLog;
+	@Column(nullable = false)
+	private Long matchingId;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "attribute_id", nullable = false)
@@ -62,7 +57,7 @@ public class UsersAttributeLog {
 	private Integer exp;
 
 	@CreatedDate
-	@Column(nullable = false)
+	@Column(nullable = false, updatable = false)
 	private LocalDateTime createdAt;
 
 	@Column(nullable = false)

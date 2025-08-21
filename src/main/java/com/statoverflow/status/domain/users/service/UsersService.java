@@ -5,6 +5,7 @@ import com.statoverflow.status.domain.auth.dto.SignUpRequestDto;
 import com.statoverflow.status.domain.auth.dto.SocialLoginReturnDto;
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
 import com.statoverflow.status.domain.users.dto.NicknameRequestDto;
+import com.statoverflow.status.domain.users.dto.TierDto;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -20,4 +21,6 @@ public interface UsersService {
 	void deleteUser(Long id, HttpServletResponse response);
 
 	BasicUsersDto connectProvider(BasicUsersDto users, OAuthProviderDto req);
+
+	TierDto getTier(Long userId);
 }

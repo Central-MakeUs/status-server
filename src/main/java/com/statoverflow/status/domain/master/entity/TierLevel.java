@@ -1,11 +1,16 @@
 package com.statoverflow.status.domain.master.entity;
 
-import com.statoverflow.status.domain.master.enums.AttributeType;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import com.statoverflow.status.domain.master.enums.Tier;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -14,26 +19,24 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "attribute")
 @Getter
+@Table(name = "tier_level")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Attribute {
+@EntityListeners(AuditingEntityListener.class)
+public class TierLevel {
 
 	@Id
-	private Integer id;
+	private int level;
 
 	@Column(nullable = false)
-	private Integer bitMask;
-
-	@Column(nullable = false)
-	private String name;
+	private Long xpRequired;
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private AttributeType type;
+	private Tier grade;
 
 	@Column(nullable = false)
-	private String description;
+	private int levelOutput;
 
 }

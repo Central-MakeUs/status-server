@@ -1,7 +1,6 @@
 package com.statoverflow.status.global.jwt;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -14,7 +13,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import com.statoverflow.status.domain.users.dto.BasicUsersDto;
-import com.statoverflow.status.domain.users.enums.ProviderType;
+import com.statoverflow.status.domain.users.dto.TierDto;
+import com.statoverflow.status.domain.users.service.UsersService;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -26,11 +26,15 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@RequiredArgsConstructor
 @Component
-public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtTokenProvider)
+public class JwtService {
+
+    private final UsersService usersService;
 
     @Value("${jwt.secret}")
     private String secret; // application.yml의 secret 값 주입
@@ -142,7 +146,8 @@ public class JwtService { // 클래스명 변경 권장 (JwtProvider -> JwtToken
         String nickname = claims.get("nickname", String.class);
         String providerType = claims.get("providerType", String.class);
 
-        return BasicUsersDto.of((long) id, nickname, providerType);
+
+        return BasicUsersDto.of((long) id, nickname, providerType, usersService.getTier((long) id));
 
     }
 
