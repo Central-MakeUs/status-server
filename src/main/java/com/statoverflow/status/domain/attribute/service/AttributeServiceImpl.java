@@ -1,14 +1,17 @@
 package com.statoverflow.status.domain.attribute.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+
 import com.statoverflow.status.domain.attribute.dto.AttributeDto;
 import com.statoverflow.status.domain.attribute.dto.AttributesReturnDto;
 import com.statoverflow.status.domain.attribute.repository.AttributeRepository;
 import com.statoverflow.status.domain.attribute.repository.UsersAttributeLogRepository;
 import com.statoverflow.status.domain.attribute.repository.UsersAttributeProgressRepository;
-import com.statoverflow.status.domain.master.entity.Attribute;
 import com.statoverflow.status.domain.master.entity.AttributeLevel;
-import com.statoverflow.status.domain.master.entity.AttributeLevelId;
-import com.statoverflow.status.domain.master.enums.AttributeType;
 import com.statoverflow.status.domain.master.repository.AttributeLevelRepository;
 import com.statoverflow.status.domain.quest.entity.UsersMainQuest;
 import com.statoverflow.status.domain.quest.entity.UsersSubQuest;
@@ -16,18 +19,10 @@ import com.statoverflow.status.domain.users.entity.Users;
 import com.statoverflow.status.domain.users.entity.UsersAttributeLog;
 import com.statoverflow.status.domain.users.entity.UsersAttributeProgress;
 import com.statoverflow.status.domain.users.enums.SourceType;
-import com.statoverflow.status.global.event.UsersAttributeProgressEvent;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -48,8 +43,14 @@ public class AttributeServiceImpl implements AttributeService {
         return attributes.stream()
             .map(attributeProgress -> {
                 AttributeLevel levelInfo = attributeLevelRepository
-                    .findTopByXpRequiredGreaterThanOrderByXpRequiredAsc(attributeProgress.getTotalExp());
-                return AttributesReturnDto.getLevel(attributeProgress, levelInfo);
+                    .findTopByIdTypeAndXpRequiredGreaterThanOrderByXpRequiredAsc(attributeProgress.getAttribute().getType(), attributeProgress.getTotalExp());
+
+                Long baseExp = attributeLevelRepository
+                    .findByIdTypeAndIdLevel(levelInfo.getId().getType(), levelInfo.getId().getLevel())
+                    .map(AttributeLevel::getXpRequired)
+                    .orElse(0L);
+
+                return AttributesReturnDto.getLevel(attributeProgress, levelInfo, baseExp);
             })
             .collect(Collectors.toList());
     }

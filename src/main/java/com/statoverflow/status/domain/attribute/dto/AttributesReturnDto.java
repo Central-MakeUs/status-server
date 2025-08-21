@@ -17,7 +17,7 @@ public record AttributesReturnDto(
     Long exp,
     Long expToNextLevel) {
 
-    public static AttributesReturnDto getLevel(UsersAttributeProgress attributeProgress, AttributeLevel levelInfo) {
+    public static AttributesReturnDto getLevel(UsersAttributeProgress attributeProgress, AttributeLevel levelInfo, Long baseExp) {
 
         return new AttributesReturnDto(
             attributeProgress.getAttribute().getId(),
@@ -25,7 +25,7 @@ public record AttributesReturnDto(
             attributeProgress.getAttribute().getType(),
             attributeProgress.getAttribute().getDescription(),
             levelInfo.getId().getLevel(),
-            attributeProgress.getTotalExp(),
+            attributeProgress.getTotalExp() - baseExp,
             levelInfo.getXpRequired() - attributeProgress.getTotalExp()
         );
     }
