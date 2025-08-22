@@ -21,7 +21,7 @@ public interface UsersService {
 
 	void deleteUser(Long id, HttpServletResponse response);
 
-	BasicUsersDto connectProvider(BasicUsersDto users, OAuthLoginRequestDto req);
+	BasicUsersDto connectProvider(BasicUsersDto users, OAuthProviderDto req);
 
 	TierDto getTier(Long userId);
 }

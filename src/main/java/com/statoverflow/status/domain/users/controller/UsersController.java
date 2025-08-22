@@ -2,6 +2,7 @@ package com.statoverflow.status.domain.users.controller;
 
 import com.statoverflow.status.domain.auth.dto.OAuthLoginRequestDto;
 import com.statoverflow.status.domain.auth.dto.OAuthProviderDto;
+import com.statoverflow.status.domain.auth.service.OAuthService;
 import com.statoverflow.status.domain.users.dto.NicknameRequestDto;
 import com.statoverflow.status.global.annotation.CurrentUser;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +32,7 @@ public class UsersController {
 	private final UsersService usersService;
 	private final TokenService tokenService;
 	private final JwtService jwtService;
+	private final OAuthService oAuthService;
 
 	@Operation(summary = "회원가입", description = "신규 회원을 등록합니다.")
 	@PostMapping("/sign-up")
@@ -47,7 +49,10 @@ public class UsersController {
 	public ResponseEntity<ApiResponse<BasicUsersDto>> connectProvider(@CurrentUser BasicUsersDto users,
 		@RequestBody OAuthLoginRequestDto req,
 		@Parameter(hidden = true) HttpServletResponse response) {
-		BasicUsersDto user = usersService.connectProvider(users, req);
+
+		OAuthProviderDto provider = oAuthService.getProviderId(req);
+
+		BasicUsersDto user = usersService.connectProvider(users, provider);
 		tokenService.issueAndSetTokens(user, response);
 		return ApiResponse.ok(user);
 	}

@@ -189,15 +189,18 @@ public class UsersServiceImpl implements UsersService{
 	}
 
 	@Override
-	public BasicUsersDto connectProvider(BasicUsersDto users, OAuthLoginRequestDto req) {
+	public BasicUsersDto connectProvider(BasicUsersDto users, OAuthProviderDto req) {
 		Users user = usersRepository.findByIdAndProviderType(users.id(), ProviderType.GUEST)
 			.orElseThrow(() -> new CustomException(ErrorType.RESOURCE_NOT_FOUND));
 
-		if(! getUsersByProvider(OAuthLoginRequestDto.OAuthProviderDto(req)).type().equals("SIGNUP"))
-			throw new CustomException(ErrorType.SOCIAL_ALREADY_CONNECTED);
+		SocialLoginReturnDto res = getUsersByProvider(req);
 
-		user.setProviderType(req.provider());
-		user.setProviderId(req.code());
+		if(! res.type().equals("SIGNUP")) {
+            return (BasicUsersDto) res;
+		}
+
+		user.setProviderType(req.providerType());
+		user.setProviderId(req.providerId());
 
 		agreeToLatestRequiredTerms(user);
 
