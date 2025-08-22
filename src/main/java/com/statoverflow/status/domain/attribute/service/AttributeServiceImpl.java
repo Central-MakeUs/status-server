@@ -46,7 +46,7 @@ public class AttributeServiceImpl implements AttributeService {
                     .findTopByIdTypeAndXpRequiredGreaterThanOrderByXpRequiredAsc(attributeProgress.getAttribute().getType(), attributeProgress.getTotalExp());
 
                 Long baseExp = attributeLevelRepository
-                    .findByIdTypeAndIdLevel(levelInfo.getId().getType(), levelInfo.getId().getLevel())
+                    .findByIdTypeAndIdLevel(levelInfo.getId().getType(), levelInfo.getId().getLevel()-1)
                     .map(AttributeLevel::getXpRequired)
                     .orElse(0L);
 
