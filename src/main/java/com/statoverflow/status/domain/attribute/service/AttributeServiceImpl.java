@@ -50,6 +50,8 @@ public class AttributeServiceImpl implements AttributeService {
                     .map(AttributeLevel::getXpRequired)
                     .orElse(0L);
 
+                log.debug("levelInfo : {}, baseExp : {}", levelInfo.getXpRequired(), baseExp);
+
                 return AttributesReturnDto.getLevel(attributeProgress, levelInfo, baseExp);
             })
             .collect(Collectors.toList());
